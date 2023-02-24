@@ -6,11 +6,17 @@ import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 
 import 'project.dart';
+import 'viewProject.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => MyHomePageState(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<MyHomePageState>(
+            create: (context) => MyHomePageState()),
+        ChangeNotifierProvider<ViewProjectState>(
+            create: (context) => ViewProjectState()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -57,6 +63,8 @@ class MyHomePageState extends ChangeNotifier {
     projects.removeAt(index);
     notifyListeners();
   }
+
+  void addDate(Project project, String date) {}
 }
 
 class MyHomePage extends StatelessWidget {
@@ -81,7 +89,14 @@ class MyHomePage extends StatelessWidget {
                       clipBehavior: Clip.hardEdge,
                       child: InkWell(
                         onTap: () {
-                          debugPrint("i got tapped");
+                          Provider.of<ViewProjectState>(context, listen: false)
+                              .setProject(homePageState.projects[index]);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: ((context) => const ViewProjectWidget()),
+                            ),
+                          );
                         },
                         child: ListTile(
                           leading: const Icon(Icons.abc),
@@ -108,6 +123,11 @@ class MyHomePage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          /* debugPrint(Provider.of<MyHomePageState>(context, listen: false)
+              .projects[0]
+              .seminarPerDate
+              .keys
+              .toString()); */
           Navigator.push(
             context,
             MaterialPageRoute(

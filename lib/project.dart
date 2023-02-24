@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'main.dart';
+import 'seminar.dart';
 
 class Project {
   String? title;
   String? subtitle;
+  Map<String, List<Seminar>> seminarPerDate = {};
 
   Project({this.title, this.subtitle});
+
+  void addSeminar(Seminar seminar) {
+    seminarPerDate[seminar.date]!.add(seminar);
+  }
+
+  void addDate(String date) {
+    if (!seminarPerDate.keys.contains(date)) {
+      seminarPerDate[date] = List<Seminar>.empty();
+    }
+  }
 
   @override
   bool operator ==(Object other) =>
@@ -26,7 +38,7 @@ class AddProjectWidget extends StatefulWidget {
 }
 
 class _AddProjectWidgetState extends State<AddProjectWidget> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKeyProject = GlobalKey<FormState>();
   Project project = Project();
 
   @override
@@ -36,7 +48,7 @@ class _AddProjectWidgetState extends State<AddProjectWidget> {
         title: const Text("Neues Projekt anlegen"),
       ),
       body: Form(
-        key: _formKey,
+        key: _formKeyProject,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -77,8 +89,8 @@ class _AddProjectWidgetState extends State<AddProjectWidget> {
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
                   onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _formKey.currentState!.save();
+                    if (_formKeyProject.currentState!.validate()) {
+                      _formKeyProject.currentState!.save();
                       var myHomePageState = context.read<MyHomePageState>();
                       if (myHomePageState.projects.contains(project)) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -98,15 +110,6 @@ class _AddProjectWidgetState extends State<AddProjectWidget> {
             ],
           ),
         ),
-        /* child: Center(
-          child: ElevatedButton(
-            child: const Text("add me"),
-            onPressed: () {
-              var myHomePageState = context.read<MyHomePageState>();
-              myHomePageState.addProject(Project("new title", "new subtitle"));
-            },
-          ),
-        ), */
       ),
     );
   }
