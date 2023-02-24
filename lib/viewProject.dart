@@ -96,4 +96,9 @@ class ViewProjectState extends ChangeNotifier {
   void setSeminarDay(String newDay) {
     seminarDay = newDay;
   }
+
+  void addSeminar(Seminar seminar) {
+    project.addSeminar(seminar);
+    notifyListeners();
+  }
 }

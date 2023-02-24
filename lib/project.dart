@@ -16,7 +16,7 @@ class Project {
 
   void addDate(String date) {
     if (!seminarPerDate.keys.contains(date)) {
-      seminarPerDate[date] = List<Seminar>.empty();
+      seminarPerDate[date] = <Seminar>[];
     }
   }
 
@@ -101,6 +101,7 @@ class _AddProjectWidgetState extends State<AddProjectWidget> {
                         ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content: Text("Projekt wurde erstellt")));
+                        _formKeyProject.currentState!.reset();
                       }
                     }
                   },

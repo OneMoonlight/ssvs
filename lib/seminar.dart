@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ssvs/viewProject.dart';
 
 class Seminar {
   String? date;
@@ -63,6 +64,7 @@ class _AddSeminarWidgetState extends State<AddSeminarWidget> {
                   onSaved: (newValue) {
                     seminar.date = newValue;
                   },
+                  initialValue: widget.seminarDay,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                 ),
                 TextFormField(
@@ -80,6 +82,29 @@ class _AddSeminarWidgetState extends State<AddSeminarWidget> {
                   },
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                 ),
+                Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      child: const Text(
+                        "Prüfen und erstellen",
+                      ),
+                      onPressed: () {
+                        if (_fromKeySeminar.currentState!.validate()) {
+                          _fromKeySeminar.currentState!.save();
+                          var myViewProjectState =
+                              context.read<ViewProjectState>();
+                          if (!myViewProjectState.project.seminarPerDate
+                              .containsKey(seminar.date)) {
+                            myViewProjectState.addDate(seminar.date!);
+                          }
+                          myViewProjectState.addSeminar(seminar);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text("Seminar wurde erstellt")));
+                          _fromKeySeminar.currentState!.reset();
+                        }
+                      },
+                    ))
               ],
             )),
       ),
