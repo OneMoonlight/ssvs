@@ -50,10 +50,13 @@ class ViewProjectWidget extends StatelessWidget {
               ),
             ], */
           ),
-          body: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: getColumns(viewProjectState, context),
+          body: Center(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: getColumns(viewProjectState, context),
+              ),
             ),
           ),
           bottomNavigationBar: BottomAppBar(
@@ -127,7 +130,9 @@ class ViewProjectWidget extends StatelessWidget {
     base.sort();
     List<Column> columns = base
         .map((date) => Column(
-            children: <Widget>[Text(date)] +
+            //mainAxisAlignment: MainAxisAlignment.center,
+            //crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[getDateWidget(viewProjectState, date, context)] +
                 viewProjectState.project.seminarPerDate[date]!
                     .map(
                         /* (seminar) => RichText(
@@ -154,8 +159,8 @@ class ViewProjectWidget extends StatelessWidget {
                             ),
                           ],
                         ), */
-                        (seminar) =>
-                            getSeminarWidget(viewProjectState, seminar))
+                        (seminar) => getSeminarWidget(
+                            viewProjectState, seminar, context))
                     .toList() /*  +
                   <Widget>[
                     ElevatedButton(
@@ -171,10 +176,14 @@ class ViewProjectWidget extends StatelessWidget {
     if (viewProjectState.showAddSeminarButton) {
       columns = base
           .map((date) => Column(
-                children: <Widget>[Text(date)] +
+                //mainAxisAlignment: MainAxisAlignment.center,
+                //crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                      getDateWidget(viewProjectState, date, context)
+                    ] +
                     viewProjectState.project.seminarPerDate[date]!
-                        .map((seminar) =>
-                            getSeminarWidget(viewProjectState, seminar))
+                        .map((seminar) => getSeminarWidget(
+                            viewProjectState, seminar, context))
                         .toList() +
                     <Widget>[
                       ElevatedButton(
@@ -191,7 +200,71 @@ class ViewProjectWidget extends StatelessWidget {
     return columns;
   }
 
-  Widget getSeminarWidget(ViewProjectState viewProjectState, Seminar seminar) {
+  Widget getDateWidget(
+      ViewProjectState viewProjectState, String date, BuildContext context) {
+    double _scale = 0.7;
+    if (viewProjectState.showEditButton && viewProjectState.showDeleteButton) {
+      return Row(
+        children: [
+          Text(date),
+          Transform.scale(
+            scale: _scale,
+            child: IconButton(
+              onPressed: () {
+                editDate(date, viewProjectState, context);
+              },
+              icon: const Icon(Icons.edit),
+            ),
+          ),
+          Transform.scale(
+            scale: _scale,
+            child: IconButton(
+              onPressed: () {
+                deleteDate(date, viewProjectState, context);
+              },
+              icon: const Icon(Icons.delete),
+            ),
+          ),
+        ],
+      );
+    }
+    if (viewProjectState.showEditButton && !viewProjectState.showDeleteButton) {
+      return Row(
+        children: [
+          Text(date),
+          Transform.scale(
+            scale: _scale,
+            child: IconButton(
+              onPressed: () {
+                editDate(date, viewProjectState, context);
+              },
+              icon: const Icon(Icons.edit),
+            ),
+          ),
+        ],
+      );
+    }
+    if (!viewProjectState.showEditButton && viewProjectState.showDeleteButton) {
+      return Row(
+        children: [
+          Text(date),
+          Transform.scale(
+            scale: _scale,
+            child: IconButton(
+              onPressed: () {
+                deleteDate(date, viewProjectState, context);
+              },
+              icon: const Icon(Icons.delete),
+            ),
+          ),
+        ],
+      );
+    }
+    return Text(date);
+  }
+
+  Widget getSeminarWidget(ViewProjectState viewProjectState, Seminar seminar,
+      BuildContext context) {
     double _scale = 0.7;
     if (viewProjectState.showEditButton && viewProjectState.showDeleteButton) {
       return Row(
@@ -201,7 +274,7 @@ class ViewProjectWidget extends StatelessWidget {
             scale: _scale,
             child: IconButton(
               onPressed: () {
-                debugPrint("edit ${seminar.name}");
+                editSeminar(seminar, viewProjectState, context);
               },
               icon: const Icon(Icons.edit),
             ),
@@ -210,7 +283,7 @@ class ViewProjectWidget extends StatelessWidget {
             scale: _scale,
             child: IconButton(
               onPressed: () {
-                debugPrint("delete ${seminar.name}");
+                deleteSeminar(context, viewProjectState, seminar);
               },
               icon: const Icon(Icons.delete),
             ),
@@ -226,7 +299,7 @@ class ViewProjectWidget extends StatelessWidget {
             scale: _scale,
             child: IconButton(
               onPressed: () {
-                debugPrint("edit ${seminar.name}");
+                editSeminar(seminar, viewProjectState, context);
               },
               icon: const Icon(Icons.edit),
             ),
@@ -242,7 +315,7 @@ class ViewProjectWidget extends StatelessWidget {
             scale: _scale,
             child: IconButton(
               onPressed: () {
-                debugPrint("delete ${seminar.name}");
+                deleteSeminar(context, viewProjectState, seminar);
               },
               icon: const Icon(Icons.delete),
             ),
@@ -253,6 +326,40 @@ class ViewProjectWidget extends StatelessWidget {
     return Text(seminar.name!);
   }
 }
+
+void deleteSeminar(
+    BuildContext context, ViewProjectState viewProjectState, Seminar seminar) {
+  showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+              "Soll das Seminar ${seminar.name} wirklich gelöscht werden?"),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  viewProjectState.removeSeminar(seminar);
+                  Navigator.of(context).pop();
+                },
+                child: const Text("Ja")),
+            TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text("Nein")),
+          ],
+        );
+      });
+}
+
+void editSeminar(
+    Seminar seminar, ViewProjectState viewProjectState, BuildContext context) {}
+
+void deleteDate(
+    String date, ViewProjectState viewProjectState, BuildContext context) {}
+
+void editDate(
+    String date, ViewProjectState viewProjectState, BuildContext context) {}
 
 class ViewProjectState extends ChangeNotifier {
   Project project = Project();
@@ -271,12 +378,22 @@ class ViewProjectState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void removeDate(String date) {
+    project.removeDate(date);
+    notifyListeners();
+  }
+
   void setSeminarDay(String newDay) {
     seminarDay = newDay;
   }
 
   void addSeminar(Seminar seminar) {
     project.addSeminar(seminar);
+    notifyListeners();
+  }
+
+  void removeSeminar(Seminar seminar) {
+    project.removeSeminar(seminar);
     notifyListeners();
   }
 

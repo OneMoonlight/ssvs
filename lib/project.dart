@@ -14,10 +14,18 @@ class Project {
     seminarPerDate[seminar.date]!.add(seminar);
   }
 
+  void removeSeminar(Seminar seminar) {
+    seminarPerDate[seminar.date]!.remove(seminar);
+  }
+
   void addDate(String date) {
     if (!seminarPerDate.keys.contains(date)) {
       seminarPerDate[date] = <Seminar>[];
     }
+  }
+
+  void removeDate(String date) {
+    seminarPerDate.remove(date);
   }
 
   @override
