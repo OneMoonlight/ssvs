@@ -106,9 +106,31 @@ class MyHomePage extends StatelessWidget {
                               ? Text(homePageState.projects[index].subtitle!)
                               : null,
                           trailing: IconButton(
-                            onPressed: () {
+                            /* onPressed: () {
                               homePageState.deleteProjectByIndex(index);
-                            },
+                            }, */
+                            onPressed: () => showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text(
+                                        "Soll das Projekt \"${homePageState.projects[index].title}\" wirklich gelöscht werden?"),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () {
+                                            homePageState
+                                                .deleteProjectByIndex(index);
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: const Text("Ja")),
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: const Text("Nein")),
+                                    ],
+                                  );
+                                }),
                             icon: const Icon(Icons.delete),
                           ),
                         ),
