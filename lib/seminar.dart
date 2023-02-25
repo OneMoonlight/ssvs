@@ -8,7 +8,7 @@ class Seminar {
   String? name;
   String? contact;
 
-  Seminar({this.date, this.name});
+  Seminar({this.date, this.name, this.contact});
 
   @override
   bool operator ==(Object other) =>
@@ -24,6 +24,30 @@ class Seminar {
   String toString() {
     return "Titel: $name, Datum: ${DateFormat("dd.MM.yyyy").format(date!)}";
   }
+
+  Seminar copyWithOtherDate(DateTime newDate) {
+    return Seminar(date: newDate, name: name, contact: contact);
+  }
+
+  List<SeminarDifference> getDifference(Seminar seminar) {
+    List<SeminarDifference> difference = <SeminarDifference>[];
+    if (seminar.name != name) {
+      difference.add(SeminarDifference.name);
+    }
+    if (seminar.date != date) {
+      difference.add(SeminarDifference.date);
+    }
+    if (seminar.contact != contact) {
+      difference.add(SeminarDifference.contact);
+    }
+    return difference;
+  }
+}
+
+enum SeminarDifference {
+  date,
+  name,
+  contact,
 }
 
 class AddSeminarWidget extends StatefulWidget {

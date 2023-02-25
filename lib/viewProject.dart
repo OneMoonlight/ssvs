@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'project.dart';
 import 'seminar.dart';
+import 'editSeminar.dart';
 
 class ViewProjectWidget extends StatefulWidget {
   const ViewProjectWidget({super.key});
@@ -13,7 +14,7 @@ class ViewProjectWidget extends StatefulWidget {
 }
 
 class _ViewProjectWidgetState extends State<ViewProjectWidget> {
-  final _formKeyAddSeminar = GlobalKey<FormState>();
+  final _formKeyAddSeminarDay = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +102,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                           return AlertDialog(
                             title: const Text("Seminartag hinzufügen"),
                             content: Form(
-                              key: _formKeyAddSeminar,
+                              key: _formKeyAddSeminarDay,
                               /* child: TextField(
                                 decoration: const InputDecoration(
                                     labelText: "Seminartag"),
@@ -132,9 +133,10 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                                           .addDate(viewProjectState.seminarDay); 
                                       Navigator.of(context).pop();
                                     } */
-                                    if (_formKeyAddSeminar.currentState!
+                                    if (_formKeyAddSeminarDay.currentState!
                                         .validate()) {
-                                      _formKeyAddSeminar.currentState!.save();
+                                      _formKeyAddSeminarDay.currentState!
+                                          .save();
                                       viewProjectState
                                           .addDate(viewProjectState.seminarDay);
                                       Navigator.of(context).pop();
@@ -366,7 +368,10 @@ void deleteSeminar(
 }
 
 void editSeminar(
-    Seminar seminar, ViewProjectState viewProjectState, BuildContext context) {}
+    Seminar seminar, ViewProjectState viewProjectState, BuildContext context) {
+  Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => EditSeminarWidget(oldSeminar: seminar)));
+}
 
 void deleteDate(
     DateTime date, ViewProjectState viewProjectState, BuildContext context) {
@@ -394,7 +399,64 @@ void deleteDate(
 }
 
 void editDate(
-    DateTime date, ViewProjectState viewProjectState, BuildContext context) {}
+    DateTime date, ViewProjectState viewProjectState, BuildContext context) {
+  final _formKeyEditDate = GlobalKey<FormState>();
+  showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Seminartag ändern"),
+          content: Form(
+            key: _formKeyEditDate,
+            child: InputDatePickerFormField(
+              firstDate: DateTime.now().subtract(
+                const Duration(days: 3560),
+              ),
+              lastDate: DateTime.now().add(
+                const Duration(days: 3560),
+              ),
+              errorFormatText: "Ungültiges Format",
+              errorInvalidText: "Ungültiges Datum",
+              onDateSaved: (value) {
+                viewProjectState.setSeminarDay(value);
+              },
+              initialDate: date,
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text("Abbrechen")),
+            TextButton(
+                onPressed: () {
+                  if (_formKeyEditDate.currentState!.validate()) {
+                    _formKeyEditDate.currentState!.save();
+                    if (viewProjectState.seminarDay != date) {
+                      if (viewProjectState.project.seminarPerDate.keys
+                          .contains(viewProjectState.seminarDay)) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                "Das Datum ${DateFormat("dd.MM.yyyy").format(date)} existiert bereits. Änderung konnte nicht vorgenommen werden.")));
+                      } else {
+                        viewProjectState.addDate(viewProjectState.seminarDay);
+                        for (Seminar toChangeSeminar
+                            in viewProjectState.project.seminarPerDate[date]!) {
+                          viewProjectState.addSeminar(toChangeSeminar
+                              .copyWithOtherDate(viewProjectState.seminarDay));
+                        }
+                        viewProjectState.removeDate(date);
+                      }
+                    }
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: const Text("Änderung vornehmen")),
+          ],
+        );
+      });
+}
 
 class ViewProjectState extends ChangeNotifier {
   Project project = Project();
