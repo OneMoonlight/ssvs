@@ -6,7 +6,7 @@ import 'seminar.dart';
 class Project {
   String? title;
   String? subtitle;
-  Map<String, List<Seminar>> seminarPerDate = {};
+  Map<DateTime, List<Seminar>> seminarPerDate = {};
 
   Project({this.title, this.subtitle});
 
@@ -18,13 +18,13 @@ class Project {
     seminarPerDate[seminar.date]!.remove(seminar);
   }
 
-  void addDate(String date) {
+  void addDate(DateTime date) {
     if (!seminarPerDate.keys.contains(date)) {
       seminarPerDate[date] = <Seminar>[];
     }
   }
 
-  void removeDate(String date) {
+  void removeDate(DateTime date) {
     seminarPerDate.remove(date);
   }
 
@@ -80,7 +80,7 @@ class _AddProjectWidgetState extends State<AddProjectWidget> {
               TextFormField(
                 decoration: const InputDecoration(
                     hintText:
-                        "Der Titel wird auf der Homepage unter dem Titel dargestellt",
+                        "Der Untertitel wird auf der Homepage unter dem Titel dargestellt",
                     labelText: "Untertitel"),
                 validator: (value) {
                   /* if (value != null && value.contains("@")) {

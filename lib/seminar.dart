@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:ssvs/viewProject.dart';
 
 class Seminar {
-  String? date;
+  DateTime? date;
   String? name;
   String? contact;
 
@@ -12,7 +12,7 @@ class Seminar {
 
 class AddSeminarWidget extends StatefulWidget {
   const AddSeminarWidget({super.key, required this.seminarDay});
-  final String seminarDay;
+  final DateTime seminarDay;
 
   @override
   State<AddSeminarWidget> createState() => _AddSeminarWidgetState();
@@ -50,7 +50,7 @@ class _AddSeminarWidgetState extends State<AddSeminarWidget> {
                   },
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                 ),
-                TextFormField(
+                /* TextFormField(
                   decoration: const InputDecoration(
                       hintText:
                           "Das Datum, an dem dieses Seminar durchgeführt wird",
@@ -66,7 +66,7 @@ class _AddSeminarWidgetState extends State<AddSeminarWidget> {
                   },
                   initialValue: widget.seminarDay,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
-                ),
+                ), */
                 TextFormField(
                   decoration: const InputDecoration(
                       hintText: "Die verantwortliche Person für dieses Seminar",
@@ -81,6 +81,20 @@ class _AddSeminarWidgetState extends State<AddSeminarWidget> {
                     seminar.contact = newValue;
                   },
                   autovalidateMode: AutovalidateMode.onUserInteraction,
+                ),
+                InputDatePickerFormField(
+                  firstDate: DateTime.now().subtract(
+                    const Duration(days: 3560),
+                  ),
+                  lastDate: DateTime.now().add(
+                    const Duration(days: 3560),
+                  ),
+                  errorFormatText: "Ungültiges Format",
+                  errorInvalidText: "Ungültiges Datum",
+                  onDateSaved: (value) {
+                    seminar.date = value;
+                  },
+                  initialDate: widget.seminarDay,
                 ),
                 Padding(
                     padding: const EdgeInsets.all(8.0),

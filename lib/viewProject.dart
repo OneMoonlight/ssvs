@@ -1,12 +1,19 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:context_menus/context_menus.dart';
 import 'project.dart';
 import 'seminar.dart';
 
-class ViewProjectWidget extends StatelessWidget {
+class ViewProjectWidget extends StatefulWidget {
   const ViewProjectWidget({super.key});
+
+  @override
+  State<ViewProjectWidget> createState() => _ViewProjectWidgetState();
+}
+
+class _ViewProjectWidgetState extends State<ViewProjectWidget> {
+  final _formKeyAddSeminar = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -93,18 +100,41 @@ class ViewProjectWidget extends StatelessWidget {
                         builder: (context) {
                           return AlertDialog(
                             title: const Text("Seminartag hinzufügen"),
-                            content: TextField(
-                              decoration: const InputDecoration(
-                                  labelText: "Seminartag"),
-                              onChanged: (value) {
-                                viewProjectState.setSeminarDay(value);
-                              },
+                            content: Form(
+                              key: _formKeyAddSeminar,
+                              /* child: TextField(
+                                decoration: const InputDecoration(
+                                    labelText: "Seminartag"),
+                                onChanged: (value) {
+                                  viewProjectState.setSeminarDay(value);
+                                },
+                              ), */
+                              child: InputDatePickerFormField(
+                                firstDate: DateTime.now().subtract(
+                                  const Duration(days: 3560),
+                                ),
+                                lastDate: DateTime.now().add(
+                                  const Duration(days: 3560),
+                                ),
+                                errorFormatText: "Ungültiges Format",
+                                errorInvalidText: "Ungültiges Datum",
+                                onDateSaved: (value) {
+                                  viewProjectState.setSeminarDay(value);
+                                },
+                              ),
                             ),
                             actions: [
                               TextButton(
                                   onPressed: () {
-                                    if (viewProjectState
+                                    /* if (viewProjectState
                                         .seminarDay.isNotEmpty) {
+                                      viewProjectState
+                                          .addDate(viewProjectState.seminarDay); 
+                                      Navigator.of(context).pop();
+                                    } */
+                                    if (_formKeyAddSeminar.currentState!
+                                        .validate()) {
+                                      _formKeyAddSeminar.currentState!.save();
                                       viewProjectState
                                           .addDate(viewProjectState.seminarDay);
                                       Navigator.of(context).pop();
@@ -126,7 +156,7 @@ class ViewProjectWidget extends StatelessWidget {
 
   List<Column> getColumns(
       ViewProjectState viewProjectState, BuildContext context) {
-    List<String> base = viewProjectState.project.seminarPerDate.keys.toList();
+    List<DateTime> base = viewProjectState.project.seminarPerDate.keys.toList();
     base.sort();
     List<Column> columns = base
         .map((date) => Column(
@@ -201,12 +231,13 @@ class ViewProjectWidget extends StatelessWidget {
   }
 
   Widget getDateWidget(
-      ViewProjectState viewProjectState, String date, BuildContext context) {
+      ViewProjectState viewProjectState, DateTime date, BuildContext context) {
     double _scale = 0.7;
+    DateFormat formatter = DateFormat("dd.MM.yyyy");
     if (viewProjectState.showEditButton && viewProjectState.showDeleteButton) {
       return Row(
         children: [
-          Text(date),
+          Text(formatter.format(date)),
           Transform.scale(
             scale: _scale,
             child: IconButton(
@@ -231,7 +262,7 @@ class ViewProjectWidget extends StatelessWidget {
     if (viewProjectState.showEditButton && !viewProjectState.showDeleteButton) {
       return Row(
         children: [
-          Text(date),
+          Text(formatter.format(date)),
           Transform.scale(
             scale: _scale,
             child: IconButton(
@@ -247,7 +278,7 @@ class ViewProjectWidget extends StatelessWidget {
     if (!viewProjectState.showEditButton && viewProjectState.showDeleteButton) {
       return Row(
         children: [
-          Text(date),
+          Text(formatter.format(date)),
           Transform.scale(
             scale: _scale,
             child: IconButton(
@@ -260,7 +291,7 @@ class ViewProjectWidget extends StatelessWidget {
         ],
       );
     }
-    return Text(date);
+    return Text(formatter.format(date));
   }
 
   Widget getSeminarWidget(ViewProjectState viewProjectState, Seminar seminar,
@@ -356,14 +387,14 @@ void editSeminar(
     Seminar seminar, ViewProjectState viewProjectState, BuildContext context) {}
 
 void deleteDate(
-    String date, ViewProjectState viewProjectState, BuildContext context) {}
+    DateTime date, ViewProjectState viewProjectState, BuildContext context) {}
 
 void editDate(
-    String date, ViewProjectState viewProjectState, BuildContext context) {}
+    DateTime date, ViewProjectState viewProjectState, BuildContext context) {}
 
 class ViewProjectState extends ChangeNotifier {
   Project project = Project();
-  late String seminarDay;
+  late DateTime seminarDay;
 
   bool showEditButton = true;
   bool showDeleteButton = false;
@@ -373,17 +404,17 @@ class ViewProjectState extends ChangeNotifier {
     project = newProject;
   }
 
-  void addDate(String date) {
+  void addDate(DateTime date) {
     project.addDate(date);
     notifyListeners();
   }
 
-  void removeDate(String date) {
+  void removeDate(DateTime date) {
     project.removeDate(date);
     notifyListeners();
   }
 
-  void setSeminarDay(String newDay) {
+  void setSeminarDay(DateTime newDay) {
     seminarDay = newDay;
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'project.dart';
 import 'viewProject.dart';
@@ -34,10 +35,14 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
               seedColor: Colors.green, brightness: Brightness.light)),
-      /* home: ChangeNotifierProvider(
-        create: (context) => MyHomePageState(),
-        child: const MyHomePage(),
-      ), */
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('de'),
+      ],
       home: const MyHomePage(),
     );
   }
