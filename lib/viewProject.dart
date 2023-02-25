@@ -162,48 +162,60 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
     );
   }
 
-  List<Padding> getColumns(
+  List<Widget> getColumns(
       ViewProjectState viewProjectState, BuildContext context) {
     List<DateTime> base = viewProjectState.project.seminarPerDate.keys.toList();
     base.sort();
-    List<Padding> columns = base
-        .map((date) => Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                  //mainAxisAlignment: MainAxisAlignment.center,
-                  //crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                        getDateWidget(viewProjectState, date, context)
-                      ] +
-                      viewProjectState.project.seminarPerDate[date]!
-                          .map((seminar) => getSeminarWidget(
-                              viewProjectState, seminar, context))
-                          .toList()),
+    List<Widget> columns = base
+        .map((date) => Align(
+              alignment: Alignment.topCenter,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.vertical,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                      //mainAxisAlignment: MainAxisAlignment.center,
+                      //crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                            getDateWidget(viewProjectState, date, context)
+                          ] +
+                          viewProjectState.project.seminarPerDate[date]!
+                              .map((seminar) => getSeminarWidget(
+                                  viewProjectState, seminar, context))
+                              .toList()),
+                ),
+              ),
             ))
         .toList();
     if (viewProjectState.showAddSeminarButton) {
       columns = base
-          .map((date) => Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  //mainAxisAlignment: MainAxisAlignment.center,
-                  //crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                        getDateWidget(viewProjectState, date, context)
-                      ] +
-                      viewProjectState.project.seminarPerDate[date]!
-                          .map((seminar) => getSeminarWidget(
-                              viewProjectState, seminar, context))
-                          .toList() +
-                      <Widget>[
-                        ElevatedButton(
-                            onPressed: () {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) =>
-                                      AddSeminarWidget(seminarDay: date)));
-                            },
-                            child: const Text("Seminar hinzufügen"))
-                      ],
+          .map((date) => Align(
+                alignment: Alignment.topCenter,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      //mainAxisAlignment: MainAxisAlignment.center,
+                      //crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                            getDateWidget(viewProjectState, date, context)
+                          ] +
+                          viewProjectState.project.seminarPerDate[date]!
+                              .map((seminar) => getSeminarWidget(
+                                  viewProjectState, seminar, context))
+                              .toList() +
+                          <Widget>[
+                            ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                      builder: (context) =>
+                                          AddSeminarWidget(seminarDay: date)));
+                                },
+                                child: const Text("Seminar hinzufügen"))
+                          ],
+                    ),
+                  ),
                 ),
               ))
           .toList();
@@ -340,6 +352,100 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
     }
     return Text(seminar.name!);
   }
+}
+
+Widget getSeminarWidgetV2(
+    ViewProjectState viewProjectState, Seminar seminar, BuildContext context) {
+  if (viewProjectState.showEditButton && viewProjectState.showDeleteButton) {
+    return Card(
+      clipBehavior: Clip.hardEdge,
+      child: InkWell(
+        onTap: () {},
+        child: ListTile(
+          leading: const Icon(Icons.abc),
+          title: Text(seminar.name!),
+          subtitle: Text("Verantwortliche Person: ${seminar.contact}"),
+          trailing: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    editSeminar(seminar, viewProjectState, context);
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () {
+                    deleteSeminar(context, viewProjectState, seminar);
+                  },
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  if (!viewProjectState.showEditButton && viewProjectState.showDeleteButton) {
+    return Card(
+      clipBehavior: Clip.hardEdge,
+      child: InkWell(
+        onTap: () {},
+        child: ListTile(
+          leading: const Icon(Icons.abc),
+          title: Text(seminar.name!),
+          subtitle: Text("Verantwortliche Person: ${seminar.contact}"),
+          trailing: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () {
+                deleteSeminar(context, viewProjectState, seminar);
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  if (!viewProjectState.showEditButton && !viewProjectState.showDeleteButton) {
+    return Card(
+      clipBehavior: Clip.hardEdge,
+      child: InkWell(
+        onTap: () {},
+        child: ListTile(
+          leading: const Icon(Icons.abc),
+          title: Text(seminar.name!),
+          subtitle: Text("Verantwortliche Person: ${seminar.contact}"),
+        ),
+      ),
+    );
+  }
+  return Card(
+    clipBehavior: Clip.hardEdge,
+    child: InkWell(
+      onTap: () {},
+      child: ListTile(
+        leading: const Icon(Icons.abc),
+        title: Text(seminar.name!),
+        subtitle: Text("Verantwortliche Person: ${seminar.contact}"),
+        trailing: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              editSeminar(seminar, viewProjectState, context);
+            },
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 void deleteSeminar(

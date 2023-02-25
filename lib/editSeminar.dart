@@ -113,7 +113,6 @@ class _EditSeminarWidgetState extends State<EditSeminarWidget> {
                                     widget.oldSeminar.getDifference(newSeminar);
                                 var viewProjectState =
                                     context.read<ViewProjectState>();
-                                debugPrint(difference.toString());
                                 if (difference.isEmpty) {
                                   Navigator.of(context).pop();
                                 } else {
