@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:ssvs/viewProject.dart';
 
@@ -8,6 +9,21 @@ class Seminar {
   String? contact;
 
   Seminar({this.date, this.name});
+
+  @override
+  bool operator ==(Object other) =>
+      other is Seminar &&
+      other.runtimeType == runtimeType &&
+      other.name == name &&
+      other.date == date;
+
+  @override
+  int get hashCode => (name! + date.toString()).hashCode;
+
+  @override
+  String toString() {
+    return "Titel: $name, Datum: ${DateFormat("dd.MM.yyyy").format(date!)}";
+  }
 }
 
 class AddSeminarWidget extends StatefulWidget {
@@ -34,21 +50,24 @@ class _AddSeminarWidgetState extends State<AddSeminarWidget> {
             padding: const EdgeInsets.all(8.0),
             child: Column(
               children: [
-                TextFormField(
-                  decoration: const InputDecoration(
-                      hintText:
-                          "Der Titel des Seminars muss innerhalb eines Seminartages eindeutig sein",
-                      labelText: "Titel"),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Der Titel darf nicht leer sein";
-                    }
-                    return null;
-                  },
-                  onSaved: (newValue) {
-                    seminar.name = newValue;
-                  },
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                        hintText:
+                            "Der Titel des Seminars muss innerhalb eines Seminartages eindeutig sein",
+                        labelText: "Titel"),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Der Titel darf nicht leer sein";
+                      }
+                      return null;
+                    },
+                    onSaved: (newValue) {
+                      seminar.name = newValue;
+                    },
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                  ),
                 ),
                 /* TextFormField(
                   decoration: const InputDecoration(
@@ -67,34 +86,41 @@ class _AddSeminarWidgetState extends State<AddSeminarWidget> {
                   initialValue: widget.seminarDay,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                 ), */
-                TextFormField(
-                  decoration: const InputDecoration(
-                      hintText: "Die verantwortliche Person für dieses Seminar",
-                      labelText: "Verantwortliche Person"),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return "Die verantwortliche Person darf nicht leer sein";
-                    }
-                    return null;
-                  },
-                  onSaved: (newValue) {
-                    seminar.contact = newValue;
-                  },
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                        hintText:
+                            "Die verantwortliche Person für dieses Seminar",
+                        labelText: "Verantwortliche Person"),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Die verantwortliche Person darf nicht leer sein";
+                      }
+                      return null;
+                    },
+                    onSaved: (newValue) {
+                      seminar.contact = newValue;
+                    },
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                  ),
                 ),
-                InputDatePickerFormField(
-                  firstDate: DateTime.now().subtract(
-                    const Duration(days: 3560),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: InputDatePickerFormField(
+                    firstDate: DateTime.now().subtract(
+                      const Duration(days: 3560),
+                    ),
+                    lastDate: DateTime.now().add(
+                      const Duration(days: 3560),
+                    ),
+                    errorFormatText: "Ungültiges Format",
+                    errorInvalidText: "Ungültiges Datum",
+                    onDateSaved: (value) {
+                      seminar.date = value;
+                    },
+                    initialDate: widget.seminarDay,
                   ),
-                  lastDate: DateTime.now().add(
-                    const Duration(days: 3560),
-                  ),
-                  errorFormatText: "Ungültiges Format",
-                  errorInvalidText: "Ungültiges Datum",
-                  onDateSaved: (value) {
-                    seminar.date = value;
-                  },
-                  initialDate: widget.seminarDay,
                 ),
                 Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -111,11 +137,20 @@ class _AddSeminarWidgetState extends State<AddSeminarWidget> {
                               .containsKey(seminar.date)) {
                             myViewProjectState.addDate(seminar.date!);
                           }
-                          myViewProjectState.addSeminar(seminar);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text("Seminar wurde erstellt")));
-                          _fromKeySeminar.currentState!.reset();
+                          if (myViewProjectState
+                              .project.seminarPerDate[seminar.date]!
+                              .contains(seminar)) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(
+                                    "Seminar konnte nicht erstellt werden. Der Titel existiert bereits am ${DateFormat("dd.MM.yyyy").format(seminar.date!)}")));
+                          } else {
+                            myViewProjectState.addSeminar(seminar);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text("Seminar wurde erstellt")));
+                            _fromKeySeminar.currentState!.reset();
+                            Navigator.of(context).pop();
+                          }
                         }
                       },
                     ))
