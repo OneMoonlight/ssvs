@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'project.dart';
 import 'seminar.dart';
 import 'editSeminar.dart';
 import 'main.dart';
+import 'util.dart';
 
 class ViewProjectWidget extends StatefulWidget {
   const ViewProjectWidget({super.key});
@@ -166,16 +168,14 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                     icon: const Icon(Icons.post_add)),
                 IconButton(
                   onPressed: () {
-                    debugPrint(
-                        viewProjectState.project.seminarPerDate.toString());
+                    generateExcelTemplate(viewProjectState.project, context);
                   },
                   icon: const Icon(Icons.download),
                   tooltip: "Template herunterladen",
                 ),
                 IconButton(
                   onPressed: () {
-                    debugPrint(
-                        viewProjectState.project.seminarPerDate.toString());
+                    createAssignments(viewProjectState.project);
                   },
                   icon: const Icon(Icons.upload),
                   tooltip: "Seminarzuordnung vornehmen",
@@ -183,6 +183,8 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                 IconButton(
                   onPressed: () {
                     saveProjects(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Projekt gespeichert")));
                   },
                   icon: const Icon(Icons.save),
                   tooltip: "Projekt speichern",
