@@ -86,6 +86,32 @@ class _EditSeminarWidgetState extends State<EditSeminarWidget> {
                     initialDate: widget.oldSeminar.date,
                   ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                        hintText:
+                            "Die maximale Anzahl an Personen, die an diesem Seminar teilnehmen kann",
+                        labelText: "Max. Anzahl Personen"),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Die maximale Anzahl an Personen darf nicht leer sein";
+                      }
+                      try {
+                        int i = int.parse(value);
+                      } catch (e) {
+                        return "Die maximale Anzahl an Personen muss eine ganze Zahl sein";
+                      }
+                      return null;
+                    },
+                    onSaved: (newValue) {
+                      newSeminar.maxPeople = int.parse(newValue!);
+                    },
+                    keyboardType: TextInputType.number,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    initialValue: widget.oldSeminar.maxPeople.toString(),
+                  ),
+                ),
                 Center(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -205,8 +231,10 @@ class _EditSeminarWidgetState extends State<EditSeminarWidget> {
                                       return;
                                     }
                                   }
-                                  if (difference
-                                      .contains(SeminarDifference.contact)) {
+                                  if (difference.contains(
+                                          SeminarDifference.contact) ||
+                                      difference.contains(
+                                          SeminarDifference.maxPeople)) {
                                     // Kontaktänderung hat keinen Einfluss
                                     viewProjectState.addDate(newSeminar.date!);
                                     viewProjectState.addSeminar(newSeminar);

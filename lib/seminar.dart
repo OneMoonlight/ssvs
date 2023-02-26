@@ -7,8 +7,9 @@ class Seminar {
   DateTime? date;
   String? name;
   String? contact;
+  int? maxPeople;
 
-  Seminar({this.date, this.name, this.contact});
+  Seminar({this.date, this.name, this.contact, this.maxPeople});
 
   @override
   bool operator ==(Object other) =>
@@ -26,7 +27,8 @@ class Seminar {
   }
 
   Seminar copyWithOtherDate(DateTime newDate) {
-    return Seminar(date: newDate, name: name, contact: contact);
+    return Seminar(
+        date: newDate, name: name, contact: contact, maxPeople: maxPeople);
   }
 
   List<SeminarDifference> getDifference(Seminar seminar) {
@@ -40,22 +42,31 @@ class Seminar {
     if (seminar.contact != contact) {
       difference.add(SeminarDifference.contact);
     }
+    if (seminar.maxPeople != maxPeople) {
+      difference.add(SeminarDifference.maxPeople);
+    }
     return difference;
   }
 
   Seminar.fromJson(Map<String, dynamic> json)
       : name = json["name"],
         date = DateTime.parse(json["date"]),
-        contact = json["contact"];
+        contact = json["contact"],
+        maxPeople = json["maxPeople"];
 
-  Map<String, dynamic> toJson() =>
-      {'name': name, 'contact': contact, 'date': date!.toIso8601String()};
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'contact': contact,
+        'date': date!.toIso8601String(),
+        'maxPeople': maxPeople
+      };
 }
 
 enum SeminarDifference {
   date,
   name,
   contact,
+  maxPeople,
 }
 
 class AddSeminarWidget extends StatefulWidget {
@@ -152,6 +163,31 @@ class _AddSeminarWidgetState extends State<AddSeminarWidget> {
                       seminar.date = value;
                     },
                     initialDate: widget.seminarDay,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextFormField(
+                    decoration: const InputDecoration(
+                        hintText:
+                            "Die maximale Anzahl an Personen, die an diesem Seminar teilnehmen kann",
+                        labelText: "Max. Anzahl Personen"),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Die maximale Anzahl an Personen darf nicht leer sein";
+                      }
+                      try {
+                        int i = int.parse(value);
+                      } catch (e) {
+                        return "Die maximale Anzahl an Personen muss eine ganze Zahl sein";
+                      }
+                      return null;
+                    },
+                    onSaved: (newValue) {
+                      seminar.maxPeople = int.parse(newValue!);
+                    },
+                    keyboardType: TextInputType.number,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                   ),
                 ),
                 Padding(
