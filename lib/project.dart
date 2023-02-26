@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'main.dart';
@@ -9,6 +11,38 @@ class Project {
   Map<DateTime, List<Seminar>> seminarPerDate = {};
 
   Project({this.title, this.subtitle});
+
+  Project.fromJson(Map<String, dynamic> json)
+      : title = json["title"],
+        subtitle = json["subtitle"],
+        seminarPerDate = parseSeminarPerDate(json["seminarPerDate"]);
+
+  static Map<DateTime, List<Seminar>> parseSeminarPerDate(
+      Map<String, dynamic> json) {
+    Map<String, dynamic> givenMap = json;
+    Map<DateTime, List<Seminar>> setMap = {};
+    givenMap.forEach((key, value) {
+      List<Seminar> seminars = [];
+
+      for (Map<String, dynamic> elem in value) {
+        seminars.add(Seminar.fromJson(elem));
+      }
+      setMap[DateTime.parse(key)] = seminars;
+    });
+    return setMap;
+  }
+
+  Map<String, dynamic> toJson() {
+    Map<String, List<Seminar>> newSeminarPerDate = {};
+    seminarPerDate.forEach((key, value) {
+      newSeminarPerDate[key.toIso8601String()] = value;
+    });
+    return {
+      'title': title,
+      'subtitle': subtitle,
+      'seminarPerDate': newSeminarPerDate,
+    };
+  }
 
   void addSeminar(Seminar seminar) {
     seminarPerDate[seminar.date]!.add(seminar);
@@ -109,7 +143,9 @@ class _AddProjectWidgetState extends State<AddProjectWidget> {
                         ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content: Text("Projekt wurde erstellt")));
+                        saveProjects(context);
                         _formKeyProject.currentState!.reset();
+                        Navigator.of(context).pop();
                       }
                     }
                   },

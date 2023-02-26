@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -53,6 +54,22 @@ class MyHomePageState extends ChangeNotifier {
     Project(
         title: "Seminarwoche DG 02/23", subtitle: "Vom 15.03.23 bis 20.03.23")
   ];
+  List<Project> acutalProjects = [];
+
+  Future<bool> getActualProjects() async {
+    Directory appDir = await getApplicationDocumentsDirectory();
+    if (File("${appDir.path}/ssvs/projects.json").existsSync()) {
+      debugPrint("file exists");
+      Iterable json = jsonDecode(
+          File("${appDir.path}/ssvs/projects.json").readAsStringSync());
+
+      projects = List<Project>.from(
+          json.map((projectJson) => Project.fromJson(projectJson)));
+    } else {
+      debugPrint("file does not exist");
+    }
+    return true;
+  }
 
   void addProject(Project project) {
     projects.add(project);
@@ -86,61 +103,82 @@ class MyHomePage extends StatelessWidget {
           children: [
             Consumer<MyHomePageState>(
               builder: (context, homePageState, child) {
-                return ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: homePageState.projects.length,
-                  itemBuilder: (context, int index) {
-                    return Card(
-                      clipBehavior: Clip.hardEdge,
-                      child: InkWell(
-                        onTap: () {
-                          Provider.of<ViewProjectState>(context, listen: false)
-                              .setProject(homePageState.projects[index]);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: ((context) => const ViewProjectWidget()),
+                homePageState.getActualProjects();
+                return FutureBuilder(
+                  future: homePageState.getActualProjects(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: homePageState.projects.length,
+                        itemBuilder: (context, int index) {
+                          return Card(
+                            clipBehavior: Clip.hardEdge,
+                            child: InkWell(
+                              onTap: () {
+                                Provider.of<ViewProjectState>(context,
+                                        listen: false)
+                                    .setProject(homePageState.projects[index]);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: ((context) =>
+                                        const ViewProjectWidget()),
+                                  ),
+                                );
+                              },
+                              child: ListTile(
+                                leading: const Icon(Icons.abc),
+                                title:
+                                    Text(homePageState.projects[index].title!),
+                                subtitle: homePageState
+                                            .projects[index].subtitle !=
+                                        null
+                                    ? Text(
+                                        homePageState.projects[index].subtitle!)
+                                    : null,
+                                trailing: IconButton(
+                                  /* onPressed: () {
+                                homePageState.deleteProjectByIndex(index);
+                              }, */
+                                  onPressed: () => showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          title: Text(
+                                              "Soll das Projekt \"${homePageState.projects[index].title}\" wirklich gelöscht werden?"),
+                                          actions: [
+                                            TextButton(
+                                                onPressed: () {
+                                                  homePageState
+                                                      .deleteProjectByIndex(
+                                                          index);
+                                                  saveProjects(context);
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: const Text("Ja")),
+                                            TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: const Text("Nein")),
+                                          ],
+                                        );
+                                      }),
+                                  icon: const Icon(Icons.delete),
+                                ),
+                              ),
                             ),
                           );
                         },
-                        child: ListTile(
-                          leading: const Icon(Icons.abc),
-                          title: Text(homePageState.projects[index].title!),
-                          subtitle: homePageState.projects[index].subtitle !=
-                                  null
-                              ? Text(homePageState.projects[index].subtitle!)
-                              : null,
-                          trailing: IconButton(
-                            /* onPressed: () {
-                              homePageState.deleteProjectByIndex(index);
-                            }, */
-                            onPressed: () => showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: Text(
-                                        "Soll das Projekt \"${homePageState.projects[index].title}\" wirklich gelöscht werden?"),
-                                    actions: [
-                                      TextButton(
-                                          onPressed: () {
-                                            homePageState
-                                                .deleteProjectByIndex(index);
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: const Text("Ja")),
-                                      TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: const Text("Nein")),
-                                    ],
-                                  );
-                                }),
-                            icon: const Icon(Icons.delete),
-                          ),
-                        ),
-                      ),
-                    );
+                      );
+                    } else if (snapshot.hasError) {
+                      return const Center(
+                          child: Text(
+                              "Error: Something went wrong with loading the project file"));
+                    } else {
+                      return const CircularProgressIndicator();
+                    }
                   },
                 );
               },
@@ -167,4 +205,13 @@ class MyHomePage extends StatelessWidget {
       ),
     );
   }
+}
+
+void saveProjects(BuildContext context) async {
+  var homePageState = context.read<MyHomePageState>();
+  Directory appDocDir = await getApplicationDocumentsDirectory();
+  File("${appDocDir.path}/ssvs/projects.json").createSync(recursive: true);
+  File file = File("${appDocDir.path}/ssvs/projects.json");
+  file.writeAsStringSync(jsonEncode(homePageState.projects));
+  debugPrint("saved file to path: ${file.path}");
 }

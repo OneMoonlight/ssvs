@@ -42,6 +42,14 @@ class Seminar {
     }
     return difference;
   }
+
+  Seminar.fromJson(Map<String, dynamic> json)
+      : name = json["name"],
+        date = DateTime.parse(json["date"]),
+        contact = json["contact"];
+
+  Map<String, dynamic> toJson() =>
+      {'name': name, 'contact': contact, 'date': date!.toIso8601String()};
 }
 
 enum SeminarDifference {

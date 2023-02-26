@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -5,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'project.dart';
 import 'seminar.dart';
 import 'editSeminar.dart';
+import 'main.dart';
 
 class ViewProjectWidget extends StatefulWidget {
   const ViewProjectWidget({super.key});
@@ -137,8 +140,21 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                                         .validate()) {
                                       _formKeyAddSeminarDay.currentState!
                                           .save();
-                                      viewProjectState
-                                          .addDate(viewProjectState.seminarDay);
+                                      if (viewProjectState
+                                          .project.seminarPerDate
+                                          .containsKey(
+                                              viewProjectState.seminarDay)) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                "Das Datum ${DateFormat("dd.MM.yyyy").format(viewProjectState.seminarDay)} existiert bereits"),
+                                          ),
+                                        );
+                                      } else {
+                                        viewProjectState.addDate(
+                                            viewProjectState.seminarDay);
+                                      }
                                       Navigator.of(context).pop();
                                     }
                                   },
@@ -149,11 +165,37 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                     tooltip: "Seminartag hinzufügen",
                     icon: const Icon(Icons.post_add)),
                 IconButton(
-                    onPressed: () {
-                      debugPrint(
-                          viewProjectState.project.seminarPerDate.toString());
-                    },
-                    icon: const Icon(Icons.deck))
+                  onPressed: () {
+                    debugPrint(
+                        viewProjectState.project.seminarPerDate.toString());
+                  },
+                  icon: const Icon(Icons.download),
+                  tooltip: "Template herunterladen",
+                ),
+                IconButton(
+                  onPressed: () {
+                    debugPrint(
+                        viewProjectState.project.seminarPerDate.toString());
+                  },
+                  icon: const Icon(Icons.upload),
+                  tooltip: "Seminarzuordnung vornehmen",
+                ),
+                IconButton(
+                  onPressed: () {
+                    saveProjects(context);
+                  },
+                  icon: const Icon(Icons.save),
+                  tooltip: "Projekt speichern",
+                ),
+                IconButton(
+                  onPressed: () {
+                    debugPrint(jsonEncode(
+                      viewProjectState.project,
+                    ));
+                  },
+                  icon: const Icon(Icons.alarm_on_sharp),
+                  tooltip: "Debug Test",
+                ),
               ],
             ),
           ),
