@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:excel/excel.dart';
@@ -106,6 +107,7 @@ class FilledSheet {
   String rank;
 
   Map<Seminar, int> votings = {};
+  AdditionalInformation additionalInformation = AdditionalInformation();
 
   FilledSheet(
       {required this.group,
@@ -165,16 +167,8 @@ FilledSheet readExcelTemplate(Project project, Excel excel) {
   dates.sort();
   for (DateTime date in dates) {
     int rowIndex = 8;
-    /* votingSheet
-        .cell(CellIndex.indexByColumnRow(
-            columnIndex: colIndex, rowIndex: rowIndex))
-        .value = DateFormat("dd.MM.yyyy").format(date); */
     rowIndex += 1;
     for (Seminar seminar in project.seminarPerDate[date]!) {
-      /* votingSheet.cell(CellIndex.indexByColumnRow(
-          columnIndex: colIndex - 1, rowIndex: rowIndex))
-        ..value = seminar.name
-        ..cellStyle = CellStyle(bold: true); */
       double? readScore = double.tryParse(votingSheet
           .cell(CellIndex.indexByColumnRow(
               columnIndex: colIndex, rowIndex: rowIndex))
@@ -228,6 +222,37 @@ class FailedLoadings {
       "fileName: $fileName, failType: $failType, errorMsg: $errorMsg";
 }
 
+class TuplePersonDate {
+  FilledSheet filledSheet;
+  DateTime date;
+
+  TuplePersonDate({required this.filledSheet, required this.date});
+
+  @override
+  bool operator ==(Object other) =>
+      other is TuplePersonDate &&
+      other.runtimeType == runtimeType &&
+      other.filledSheet == filledSheet &&
+      other.date == date;
+
+  @override
+  int get hashCode =>
+      ("${filledSheet.rank}${filledSheet.lastName}${filledSheet.firstName}${filledSheet.group}${date.toString()}")
+          .hashCode;
+
+  @override
+  String toString() => "Person data: $filledSheet, date: $date";
+}
+
+class AdditionalInformation {
+  int currentDifference = 0;
+  Map<DateTime, Seminar> assignments = {};
+
+  void addAssignment(DateTime date, Seminar seminar) {
+    assignments[date] = seminar;
+  }
+}
+
 //void createAssignments(Directory dir, Project project) async { change to this later TODO
 void createAssignments(Project project) async {
   // run through directory recursivly TODO: add
@@ -245,7 +270,6 @@ void createAssignments(Project project) async {
         FilledSheet filledSheet =
             readExcelTemplate(project, Excel.decodeBytes(fileBytes));
         filledSheets.add(filledSheet);
-        debugPrint(filledSheet.toString());
       } on InvalidExcelInputException catch (e) {
         String fileName = entity.uri.pathSegments.last;
         fails.add(FailedLoadings(
@@ -255,4 +279,110 @@ void createAssignments(Project project) async {
       }
     }
   }
+  // retrieve base data for assigning
+  Map<FilledSheet, List<DateTime>> noAttendance = {};
+  List<TuplePersonDate> toAssign = [];
+
+  for (FilledSheet sheet in filledSheets) {
+    Map<DateTime, Map<Seminar, int>> votingsPerDay = {};
+    Map<DateTime, bool> attendancePerDay = {};
+    for (Seminar seminar in sheet.votings.keys) {
+      if (!attendancePerDay.containsKey(seminar.date)) {
+        attendancePerDay[seminar.date!] = true;
+      }
+      votingsPerDay[seminar.date!] = {seminar: sheet.votings[seminar]!};
+      if (sheet.votings[seminar] == -1) {
+        attendancePerDay[seminar.date!] = false;
+      }
+    }
+    for (DateTime date in attendancePerDay.keys) {
+      if (attendancePerDay[date]!) {
+        toAssign.add(TuplePersonDate(filledSheet: sheet, date: date));
+      } else {
+        if (!noAttendance.containsKey(sheet)) {
+          noAttendance[sheet] = [];
+        }
+        noAttendance[sheet]!.add(date);
+      }
+    }
+  }
+  List<int> validScores = [0, 1, 2, 3, 4, 5];
+  for (DateTime date in project.seminarPerDate.keys.toList()..sort()) {
+    List<Seminar> seminars = project.seminarPerDate[date]!;
+    for (int score in validScores) {
+      for (TuplePersonDate tuple
+          in toAssign.where((element) => element.date == date)) {
+        for (Seminar seminar in seminars) {
+          seminar.addVoting(
+              tuple.filledSheet, tuple.filledSheet.votings[seminar]!);
+        }
+      }
+      for (Seminar seminar in seminars) {
+        if (seminar.assignments.length == seminar.maxPeople!) {
+          seminar.votings.clear();
+        } else if (seminar.votings.length + seminar.assignments.length <=
+            seminar.maxPeople!) {
+          for (FilledSheet filledSheet in seminar.votings.keys) {
+            for (Seminar otherSeminar
+                in seminars.where((element) => element != seminar)) {
+              otherSeminar.votings.remove(filledSheet);
+            }
+            seminar.addAssignment(filledSheet);
+            filledSheet.additionalInformation.addAssignment(date, seminar);
+            int max_vote = 0;
+            for (var elem in filledSheet.votings.entries
+                .where((element) => element.key.date == date)) {
+              max_vote = max(elem.value, max_vote);
+            }
+            filledSheet.additionalInformation.currentDifference +=
+                (max_vote - filledSheet.votings[seminar]!);
+          }
+          seminar.votings.clear();
+        } else {
+          for (FilledSheet filledSheet in seminar.votings.keys) {
+            seminar.votings[filledSheet] = filledSheet.votings[seminar]! +
+                filledSheet.additionalInformation.currentDifference;
+          }
+          List<int> values = seminar.votings.values.toList()..sort();
+          int min_value =
+              values[seminar.maxPeople! - seminar.assignments.length];
+          List<FilledSheet> assigned = [];
+          for (FilledSheet filledSheet in seminar.votings.keys) {
+            if (seminar.votings[filledSheet]! > min_value) {
+              seminar.addAssignment(filledSheet);
+              assigned.add(filledSheet);
+              filledSheet.additionalInformation.addAssignment(date, seminar);
+            }
+          }
+          int amountLeftToAssign =
+              seminar.maxPeople! - seminar.assignments.length;
+          List<FilledSheet> leftToAssign = seminar.votings.keys
+              .where((element) =>
+                  !assigned.contains(element) &&
+                  seminar.votings[element] == min_value)
+              .toList();
+          for (int i = 0; i < amountLeftToAssign; i++) {
+            FilledSheet randChoice =
+                leftToAssign[Random().nextInt(leftToAssign.length)];
+            seminar.addAssignment(randChoice);
+            assigned.add(randChoice);
+            randChoice.additionalInformation.addAssignment(date, seminar);
+            leftToAssign.remove(randChoice);
+          }
+          for (FilledSheet filledSheet in assigned) {
+            for (Seminar otherSeminar
+                in seminars.where((element) => element != seminar)) {
+              otherSeminar.votings.remove(filledSheet);
+            }
+            filledSheet.additionalInformation.currentDifference -=
+                (filledSheet.votings[seminar]! - min_value + 1);
+          }
+          seminar.votings.clear();
+        }
+      }
+    }
+  }
+
+  debugPrint(noAttendance.toString());
+  debugPrint(toAssign.toString());
 }

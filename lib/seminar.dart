@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:ssvs/viewProject.dart';
+import 'util.dart';
 
 class Seminar {
   DateTime? date;
   String? name;
   String? contact;
   int? maxPeople;
+  Map<FilledSheet, int> votings = {};
+  List<FilledSheet> assignments = [];
 
   Seminar({this.date, this.name, this.contact, this.maxPeople});
 
@@ -24,6 +27,14 @@ class Seminar {
   @override
   String toString() {
     return "Titel: $name, Datum: ${DateFormat("dd.MM.yyyy").format(date!)}";
+  }
+
+  void addVoting(FilledSheet filledSheet, int value) {
+    votings[filledSheet] = value;
+  }
+
+  void addAssignment(FilledSheet filledSheet) {
+    assignments.add(filledSheet);
   }
 
   Seminar copyWithOtherDate(DateTime newDate) {
