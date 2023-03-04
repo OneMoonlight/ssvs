@@ -256,6 +256,8 @@ class AdditionalInformation {
 
 //void createAssignments(Directory dir, Project project) async { change to this later TODO
 void createAssignments(Project project, BuildContext context) async {
+  ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Excel-Auswertung wird erstellt...")));
   // run through directory recursivly TODO: add
   Directory appDir = await getApplicationDocumentsDirectory();
   Directory dir = Directory("${appDir.path}/ssvs/testData");
@@ -330,8 +332,6 @@ void createAssignments(Project project, BuildContext context) async {
           for (FilledSheet filledSheet in seminar.votings.keys) {
             for (Seminar otherSeminar
                 in seminars.where((element) => element != seminar)) {
-              debugPrint(
-                  "remove ${filledSheet.lastName} from ${otherSeminar.name} at ${otherSeminar.date}");
               otherSeminar.votings.remove(filledSheet);
             }
             seminar.addAssignment(filledSheet);
@@ -348,11 +348,15 @@ void createAssignments(Project project, BuildContext context) async {
           }
           seminar.votings.clear();
         } else {
+          debugPrint(
+              "CONFLICT seminar: ${seminar.name}::${seminar.date}, max: ${seminar.maxPeople}, assignments: ${seminar.assignments.length}, votings: ${seminar.votings.length}");
           for (FilledSheet filledSheet in seminar.votings.keys) {
             seminar.votings[filledSheet] = filledSheet.votings[seminar]! +
                 filledSheet.additionalInformation.currentDifference;
           }
+
           List<int> values = seminar.votings.values.toList()..sort();
+          values = values.reversed.toList();
           int min_value =
               values[seminar.maxPeople! - seminar.assignments.length];
           List<FilledSheet> assigned = [];
@@ -381,8 +385,6 @@ void createAssignments(Project project, BuildContext context) async {
           for (FilledSheet filledSheet in assigned) {
             for (Seminar otherSeminar
                 in seminars.where((element) => element != seminar)) {
-              debugPrint(
-                  "remove ${filledSheet.lastName} from ${otherSeminar.name} at ${otherSeminar.date}");
               otherSeminar.votings.remove(filledSheet);
             }
             filledSheet.additionalInformation.currentDifference -=
@@ -575,6 +577,7 @@ void createAssignments(Project project, BuildContext context) async {
   var fileBytes = excel.save();
   File(save_path).createSync(recursive: true);
   File(save_path).writeAsBytesSync(fileBytes!);
+
   ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Excel-Auswertung wurde erstellt")));
 
@@ -585,6 +588,7 @@ void createAssignments(Project project, BuildContext context) async {
     }
   }
   for (FilledSheet filledSheet in filledSheets) {
-    debugPrint("sheets ${filledSheet.additionalInformation.assignments}");
+    debugPrint(
+        "Name: ${filledSheet.lastName}, sheets: ${filledSheet.additionalInformation.assignments}");
   }
 }
