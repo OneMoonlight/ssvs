@@ -6,6 +6,7 @@ import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:ssvs/main.dart';
 
 import 'project.dart';
 import 'seminar.dart';
@@ -185,7 +186,7 @@ FilledSheet readExcelTemplate(Project project, Excel excel) {
         throw InvalidExcelInputException(
             errorMsg: InvalidExcelInput.invalidVoting,
             additionalInformation:
-                "${seminar.name} am ${DateFormat("dd.MM.yyyy").format(seminar.date!)} mit Voting $score, read value: ${votingSheet.cell(CellIndex.indexByColumnRow(columnIndex: colIndex, rowIndex: rowIndex)).value.toString()}");
+                "${seminar.name} am ${DateFormat("dd.MM.yyyy").format(seminar.date!)} mit Voting $score");
       } else {
         filledSheet.addVoting(seminar, score);
       }
@@ -254,7 +255,7 @@ class AdditionalInformation {
 }
 
 //void createAssignments(Directory dir, Project project) async { change to this later TODO
-void createAssignments(Project project) async {
+void createAssignments(Project project, BuildContext context) async {
   // run through directory recursivly TODO: add
   Directory appDir = await getApplicationDocumentsDirectory();
   Directory dir = Directory("${appDir.path}/ssvs/testData");
@@ -305,14 +306,18 @@ void createAssignments(Project project) async {
         noAttendance[sheet]!.add(date);
       }
     }
+    //debugPrint("attendance: $attendancePerDay");
+    //debugPrint("toAssign: ${toAssign.length}");
   }
+
   List<int> validScores = [0, 1, 2, 3, 4, 5];
   for (DateTime date in project.seminarPerDate.keys.toList()..sort()) {
     List<Seminar> seminars = project.seminarPerDate[date]!;
-    for (int score in validScores) {
+    for (int score in validScores.reversed) {
       for (TuplePersonDate tuple
           in toAssign.where((element) => element.date == date)) {
-        for (Seminar seminar in seminars) {
+        for (Seminar seminar in seminars
+            .where((element) => tuple.filledSheet.votings[element]! == score)) {
           seminar.addVoting(
               tuple.filledSheet, tuple.filledSheet.votings[seminar]!);
         }
@@ -325,10 +330,14 @@ void createAssignments(Project project) async {
           for (FilledSheet filledSheet in seminar.votings.keys) {
             for (Seminar otherSeminar
                 in seminars.where((element) => element != seminar)) {
+              debugPrint(
+                  "remove ${filledSheet.lastName} from ${otherSeminar.name} at ${otherSeminar.date}");
               otherSeminar.votings.remove(filledSheet);
             }
             seminar.addAssignment(filledSheet);
             filledSheet.additionalInformation.addAssignment(date, seminar);
+            toAssign
+                .remove(TuplePersonDate(filledSheet: filledSheet, date: date));
             int max_vote = 0;
             for (var elem in filledSheet.votings.entries
                 .where((element) => element.key.date == date)) {
@@ -372,10 +381,14 @@ void createAssignments(Project project) async {
           for (FilledSheet filledSheet in assigned) {
             for (Seminar otherSeminar
                 in seminars.where((element) => element != seminar)) {
+              debugPrint(
+                  "remove ${filledSheet.lastName} from ${otherSeminar.name} at ${otherSeminar.date}");
               otherSeminar.votings.remove(filledSheet);
             }
             filledSheet.additionalInformation.currentDifference -=
                 (filledSheet.votings[seminar]! - min_value + 1);
+            toAssign
+                .remove(TuplePersonDate(filledSheet: filledSheet, date: date));
           }
           seminar.votings.clear();
         }
@@ -383,6 +396,195 @@ void createAssignments(Project project) async {
     }
   }
 
-  debugPrint(noAttendance.toString());
-  debugPrint(toAssign.toString());
+  // generate output excel
+  var excel = Excel.createExcel();
+  //excel.rename("Sheet1", "Seminare");
+  //excel.copy("Seminare", "Voting");
+
+  CellStyle titleStyle = CellStyle(bold: true, fontSize: 16);
+  CellStyle listStyle = CellStyle(fontSize: 12);
+
+  for (DateTime date in project.seminarPerDate.keys.toList()..sort()) {
+    for (Seminar seminar in project.seminarPerDate[date]!) {
+      final String sheetName =
+          "${DateFormat("dd.MM.yyyy").format(date)}, ${seminar.name}";
+      excel.copy("Sheet1", sheetName);
+      Sheet sheet = excel[sheetName];
+      sheet.cell(CellIndex.indexByString("A1"))
+        ..value = "${seminar.name} am ${DateFormat("dd.MM.yyyy").format(date)}"
+        ..cellStyle = titleStyle;
+      sheet.cell(CellIndex.indexByString("A3"))
+        ..value = "Teilnehmer"
+        ..cellStyle = listStyle;
+      sheet.cell(CellIndex.indexByString("A4"))
+        ..value = "Hörsaal"
+        ..cellStyle = listStyle;
+      sheet.cell(CellIndex.indexByString("B4"))
+        ..value = "Dienstgrad"
+        ..cellStyle = listStyle;
+      sheet.cell(CellIndex.indexByString("C4"))
+        ..value = "Name"
+        ..cellStyle = listStyle;
+      sheet.cell(CellIndex.indexByString("D4"))
+        ..value = "Vorname"
+        ..cellStyle = listStyle;
+      int row = 4;
+      for (FilledSheet filledSheet in seminar.assignments) {
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
+          ..value = filledSheet.group
+          ..cellStyle = listStyle;
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
+          ..value = filledSheet.rank
+          ..cellStyle = listStyle;
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row))
+          ..value = filledSheet.lastName
+          ..cellStyle = listStyle;
+        sheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row))
+          ..value = filledSheet.firstName
+          ..cellStyle = listStyle;
+        row++;
+      }
+    }
+  }
+
+  excel.copy("Sheet1", "Keine Teilnahme");
+  Sheet sheetNoAttendance = excel["Keine Teilnahme"];
+  sheetNoAttendance.cell(CellIndex.indexByString("A1"))
+    ..value = "Keine Teilnehmer"
+    ..cellStyle = titleStyle;
+  sheetNoAttendance.cell(CellIndex.indexByString("A2"))
+    ..value =
+        "Liste aller Teilnehmer, die an mindestens einem Tag nicht teilnehmen"
+    ..cellStyle = listStyle;
+  sheetNoAttendance.cell(CellIndex.indexByString("A4"))
+    ..value = "Hörsaal"
+    ..cellStyle = listStyle;
+  sheetNoAttendance.cell(CellIndex.indexByString("B4"))
+    ..value = "Dienstgrad"
+    ..cellStyle = listStyle;
+  sheetNoAttendance.cell(CellIndex.indexByString("C4"))
+    ..value = "Name"
+    ..cellStyle = listStyle;
+  sheetNoAttendance.cell(CellIndex.indexByString("D4"))
+    ..value = "Vorname"
+    ..cellStyle = listStyle;
+  sheetNoAttendance.cell(CellIndex.indexByString("E4"))
+    ..value = "Daten"
+    ..cellStyle = listStyle;
+  int row = 4;
+  noAttendance.forEach((filledSheet, dates) {
+    sheetNoAttendance
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
+      ..value = filledSheet.group
+      ..cellStyle = listStyle;
+    sheetNoAttendance
+        .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
+      ..value = filledSheet.rank
+      ..cellStyle = listStyle;
+    sheetNoAttendance
+        .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row))
+      ..value = filledSheet.lastName
+      ..cellStyle = listStyle;
+    sheetNoAttendance
+        .cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row))
+      ..value = filledSheet.firstName
+      ..cellStyle = listStyle;
+    String stringDates = "";
+    for (DateTime date in dates) {
+      stringDates += DateFormat("dd.MM.yyyy").format(date);
+      stringDates += ";";
+    }
+    if (stringDates.isNotEmpty) {
+      stringDates = stringDates.substring(0, stringDates.length - 1);
+    }
+    sheetNoAttendance
+        .cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: row))
+      ..value = stringDates
+      ..cellStyle = listStyle;
+    row++;
+  });
+  excel.copy("Sheet1", "Ungültige");
+  Sheet sheetInvalids = excel["Ungültige"];
+  sheetInvalids.cell(CellIndex.indexByString("A1"))
+    ..value = "Ungültige Templates"
+    ..cellStyle = titleStyle;
+  sheetInvalids.cell(CellIndex.indexByString("A2"))
+    ..value = "Liste aller Excel-Tabellen, die ungültig sind"
+    ..cellStyle = listStyle;
+  sheetInvalids.cell(CellIndex.indexByString("A4"))
+    ..value = "Dateiname"
+    ..cellStyle = listStyle;
+  sheetInvalids.cell(CellIndex.indexByString("B4"))
+    ..value = "Fehlertyp"
+    ..cellStyle = listStyle;
+  sheetInvalids.cell(CellIndex.indexByString("C4"))
+    ..value = "Weitere Informationen"
+    ..cellStyle = listStyle;
+  row = 4;
+  for (FailedLoadings failedLoadings in fails) {
+    sheetInvalids
+        .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
+      ..value = failedLoadings.fileName
+      ..cellStyle = listStyle;
+    sheetInvalids
+        .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row))
+      ..value = failedLoadings.failType == InvalidExcelInput.invalidMetaData
+          ? "Ungültige persönliche Daten"
+          : "Ungültiges Wahlfeld"
+      ..cellStyle = listStyle;
+    sheetInvalids
+        .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row))
+      ..value = failedLoadings.errorMsg
+      ..cellStyle = listStyle;
+    row++;
+  }
+
+  excel.rename("Sheet1", "Übersicht");
+  Sheet mainSheet = excel["Übersicht"];
+  mainSheet.cell(CellIndex.indexByString("A1"))
+    ..value = project.title
+    ..cellStyle = titleStyle;
+  mainSheet.cell(CellIndex.indexByString("A2"))
+    ..value = project.subtitle
+    ..cellStyle = listStyle;
+  mainSheet.cell(CellIndex.indexByString("A4"))
+    ..value = "Anzahl gültiger Teilnehmer"
+    ..cellStyle = listStyle;
+  mainSheet.cell(CellIndex.indexByString("A5"))
+    ..value = "Anzahl ungültiger Templates"
+    ..cellStyle = listStyle;
+  mainSheet.cell(CellIndex.indexByString("A6"))
+    ..value = "Anzahl Nicht-Teilnahmen"
+    ..cellStyle = listStyle;
+
+  mainSheet.cell(CellIndex.indexByString("B4"))
+    ..value = filledSheets.length
+    ..cellStyle = listStyle;
+  mainSheet.cell(CellIndex.indexByString("B5"))
+    ..value = fails.length
+    ..cellStyle = listStyle;
+  mainSheet.cell(CellIndex.indexByString("B6"))
+    ..value = noAttendance.length
+    ..cellStyle = listStyle;
+
+  excel.setDefaultSheet("Übersicht");
+
+  String saveTitle = project.title!.replaceAll(RegExp('[^A-Za-z0-9]'), '');
+  String save_path = "${appDir.path}/ssvs/${saveTitle}_Auswertung.xlsx";
+
+  var fileBytes = excel.save();
+  File(save_path).createSync(recursive: true);
+  File(save_path).writeAsBytesSync(fileBytes!);
+  ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Excel-Auswertung wurde erstellt")));
+
+  for (DateTime date in project.seminarPerDate.keys) {
+    for (Seminar seminar in project.seminarPerDate[date]!) {
+      debugPrint(
+          "Date: $date, Seminar: ${seminar.name},  ${seminar.assignments}");
+    }
+  }
+  for (FilledSheet filledSheet in filledSheets) {
+    debugPrint("sheets ${filledSheet.additionalInformation.assignments}");
+  }
 }

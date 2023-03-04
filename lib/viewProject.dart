@@ -175,7 +175,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                 ),
                 IconButton(
                   onPressed: () {
-                    createAssignments(viewProjectState.project);
+                    createAssignments(viewProjectState.project, context);
                   },
                   icon: const Icon(Icons.upload),
                   tooltip: "Seminarzuordnung vornehmen",
