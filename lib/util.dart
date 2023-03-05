@@ -308,8 +308,6 @@ void createAssignments(Project project, BuildContext context) async {
         noAttendance[sheet]!.add(date);
       }
     }
-    //debugPrint("attendance: $attendancePerDay");
-    //debugPrint("toAssign: ${toAssign.length}");
   }
 
   List<int> validScores = [0, 1, 2, 3, 4, 5];
@@ -318,10 +316,20 @@ void createAssignments(Project project, BuildContext context) async {
     for (int score in validScores.reversed) {
       for (TuplePersonDate tuple
           in toAssign.where((element) => element.date == date)) {
+        List<String> currentAssignmentNames = [];
+        for (Seminar seminar
+            in tuple.filledSheet.additionalInformation.assignments.values) {
+          currentAssignmentNames.add(seminar.name!);
+        }
         for (Seminar seminar in seminars
             .where((element) => tuple.filledSheet.votings[element]! == score)) {
-          seminar.addVoting(
-              tuple.filledSheet, tuple.filledSheet.votings[seminar]!);
+          if (!currentAssignmentNames.contains(seminar.name)) {
+            seminar.addVoting(
+                tuple.filledSheet, tuple.filledSheet.votings[seminar]!);
+          } else {
+            debugPrint(
+                "cant vote for seminar ${seminar.name} anymore as this seminar is already in ${tuple.filledSheet.lastName}'s assignments");
+          }
         }
       }
       for (Seminar seminar in seminars) {
