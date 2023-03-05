@@ -210,6 +210,12 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
       ViewProjectState viewProjectState, BuildContext context) {
     List<DateTime> base = viewProjectState.project.seminarPerDate.keys.toList();
     base.sort();
+    Map<DateTime, List<Seminar>> sortedSeminars = {};
+    for (DateTime date in base) {
+      sortedSeminars[date] = viewProjectState.project.seminarPerDate[date]!
+          .toList()
+        ..sort((a, b) => a.name!.compareTo(b.name!));
+    }
     List<Widget> columns = base
         .map((date) => Align(
               alignment: Alignment.topCenter,
@@ -223,7 +229,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                       children: <Widget>[
                             getDateWidget(viewProjectState, date, context)
                           ] +
-                          viewProjectState.project.seminarPerDate[date]!
+                          sortedSeminars[date]!
                               .map((seminar) => getSeminarWidget(
                                   viewProjectState, seminar, context))
                               .toList()),
@@ -245,7 +251,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                       children: <Widget>[
                             getDateWidget(viewProjectState, date, context)
                           ] +
-                          viewProjectState.project.seminarPerDate[date]!
+                          sortedSeminars[date]!
                               .map((seminar) => getSeminarWidget(
                                   viewProjectState, seminar, context))
                               .toList() +

@@ -78,7 +78,8 @@ void generateExcelTemplate(Project project, BuildContext context) async {
             columnIndex: colIndex, rowIndex: rowIndex))
         .value = DateFormat("dd.MM.yyyy").format(date);
     rowIndex += 1;
-    for (Seminar seminar in project.seminarPerDate[date]!) {
+    for (Seminar seminar in project.seminarPerDate[date]!.toList()
+      ..sort((a, b) => a.name!.compareTo(b.name!))) {
       //debugPrint("col: $colIndex, row: $rowIndex, seminar: ${seminar.name}");
       votingSheet.cell(CellIndex.indexByColumnRow(
           columnIndex: colIndex - 1, rowIndex: rowIndex))
@@ -169,7 +170,8 @@ FilledSheet readExcelTemplate(Project project, Excel excel) {
   for (DateTime date in dates) {
     int rowIndex = 8;
     rowIndex += 1;
-    for (Seminar seminar in project.seminarPerDate[date]!) {
+    for (Seminar seminar in project.seminarPerDate[date]!.toList()
+      ..sort((a, b) => a.name!.compareTo(b.name!))) {
       double? readScore = double.tryParse(votingSheet
           .cell(CellIndex.indexByColumnRow(
               columnIndex: colIndex, rowIndex: rowIndex))
@@ -312,7 +314,8 @@ void createAssignments(Project project, BuildContext context) async {
 
   List<int> validScores = [0, 1, 2, 3, 4, 5];
   for (DateTime date in project.seminarPerDate.keys.toList()..sort()) {
-    List<Seminar> seminars = project.seminarPerDate[date]!;
+    List<Seminar> seminars = project.seminarPerDate[date]!.toList()
+      ..sort((a, b) => a.name!.compareTo(b.name!));
     for (int score in validScores.reversed) {
       for (TuplePersonDate tuple
           in toAssign.where((element) => element.date == date)) {
@@ -361,6 +364,8 @@ void createAssignments(Project project, BuildContext context) async {
           for (FilledSheet filledSheet in seminar.votings.keys) {
             seminar.votings[filledSheet] = filledSheet.votings[seminar]! +
                 filledSheet.additionalInformation.currentDifference;
+            debugPrint(
+                "new currentDifference evaluation for ${filledSheet.lastName} with value ${filledSheet.additionalInformation.currentDifference}");
           }
 
           List<int> values = seminar.votings.values.toList()..sort();
@@ -395,8 +400,10 @@ void createAssignments(Project project, BuildContext context) async {
                 in seminars.where((element) => element != seminar)) {
               otherSeminar.votings.remove(filledSheet);
             }
-            filledSheet.additionalInformation.currentDifference -=
-                (filledSheet.votings[seminar]! - min_value + 1);
+            filledSheet.additionalInformation.currentDifference = max(
+                0,
+                filledSheet.additionalInformation.currentDifference -
+                    (filledSheet.votings[seminar]! - min_value + 1));
             toAssign
                 .remove(TuplePersonDate(filledSheet: filledSheet, date: date));
           }
@@ -415,7 +422,8 @@ void createAssignments(Project project, BuildContext context) async {
   CellStyle listStyle = CellStyle(fontSize: 12);
 
   for (DateTime date in project.seminarPerDate.keys.toList()..sort()) {
-    for (Seminar seminar in project.seminarPerDate[date]!) {
+    for (Seminar seminar in project.seminarPerDate[date]!.toList()
+      ..sort((a, b) => a.name!.compareTo(b.name!))) {
       final String sheetName =
           "${DateFormat("dd.MM.yyyy").format(date)}, ${seminar.name}";
       excel.copy("Sheet1", sheetName);
@@ -589,7 +597,7 @@ void createAssignments(Project project, BuildContext context) async {
   ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Excel-Auswertung wurde erstellt")));
 
-  for (DateTime date in project.seminarPerDate.keys) {
+/*   for (DateTime date in project.seminarPerDate.keys) {
     for (Seminar seminar in project.seminarPerDate[date]!) {
       debugPrint(
           "Date: $date, Seminar: ${seminar.name},  ${seminar.assignments}");
@@ -598,5 +606,5 @@ void createAssignments(Project project, BuildContext context) async {
   for (FilledSheet filledSheet in filledSheets) {
     debugPrint(
         "Name: ${filledSheet.lastName}, sheets: ${filledSheet.additionalInformation.assignments}");
-  }
+  } */
 }
