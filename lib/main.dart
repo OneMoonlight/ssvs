@@ -128,7 +128,8 @@ class MyHomePage extends StatelessWidget {
                                 );
                               },
                               child: ListTile(
-                                leading: const Icon(Icons.abc),
+                                leading:
+                                    const Icon(Icons.label_sharp), //dataset
                                 title:
                                     Text(homePageState.projects[index].title!),
                                 subtitle: homePageState
@@ -137,35 +138,52 @@ class MyHomePage extends StatelessWidget {
                                     ? Text(
                                         homePageState.projects[index].subtitle!)
                                     : null,
-                                trailing: IconButton(
-                                  /* onPressed: () {
-                                homePageState.deleteProjectByIndex(index);
-                              }, */
-                                  onPressed: () => showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: Text(
-                                              "Soll das Projekt \"${homePageState.projects[index].title}\" wirklich gelöscht werden?"),
-                                          actions: [
-                                            TextButton(
-                                                onPressed: () {
-                                                  homePageState
-                                                      .deleteProjectByIndex(
-                                                          index);
-                                                  saveProjects(context);
-                                                  Navigator.of(context).pop();
-                                                },
-                                                child: const Text("Ja")),
-                                            TextButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                child: const Text("Nein")),
-                                          ],
-                                        );
-                                      }),
-                                  icon: const Icon(Icons.delete),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                        onPressed: () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  EditProjectWidget(
+                                                oldProject: homePageState
+                                                    .projects[index],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.edit)),
+                                    IconButton(
+                                      onPressed: () => showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return AlertDialog(
+                                              title: Text(
+                                                  "Soll das Projekt \"${homePageState.projects[index].title}\" wirklich gelöscht werden?"),
+                                              actions: [
+                                                TextButton(
+                                                    onPressed: () {
+                                                      homePageState
+                                                          .deleteProjectByIndex(
+                                                              index);
+                                                      saveProjects(context);
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    child: const Text("Ja")),
+                                                TextButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    child: const Text("Nein")),
+                                              ],
+                                            );
+                                          }),
+                                      icon: const Icon(Icons.delete),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),

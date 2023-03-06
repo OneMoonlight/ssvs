@@ -222,7 +222,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
               child: SingleChildScrollView(
                 scrollDirection: Axis.vertical,
                 child: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                       //mainAxisAlignment: MainAxisAlignment.center,
                       //crossAxisAlignment: CrossAxisAlignment.center,
@@ -244,7 +244,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                 child: SingleChildScrollView(
                   scrollDirection: Axis.vertical,
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(20.0),
                     child: Column(
                       //mainAxisAlignment: MainAxisAlignment.center,
                       //crossAxisAlignment: CrossAxisAlignment.center,
@@ -277,10 +277,12 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
       ViewProjectState viewProjectState, DateTime date, BuildContext context) {
     double _scale = 0.7;
     DateFormat formatter = DateFormat("dd.MM.yyyy");
+    TextStyle style =
+        const TextStyle(fontSize: 16, fontWeight: FontWeight.bold);
     if (viewProjectState.showEditButton && viewProjectState.showDeleteButton) {
       return Row(
         children: [
-          Text(formatter.format(date)),
+          Text(formatter.format(date), style: style),
           Transform.scale(
             scale: _scale,
             child: IconButton(
@@ -305,7 +307,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
     if (viewProjectState.showEditButton && !viewProjectState.showDeleteButton) {
       return Row(
         children: [
-          Text(formatter.format(date)),
+          Text(formatter.format(date), style: style),
           Transform.scale(
             scale: _scale,
             child: IconButton(
@@ -321,7 +323,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
     if (!viewProjectState.showEditButton && viewProjectState.showDeleteButton) {
       return Row(
         children: [
-          Text(formatter.format(date)),
+          Text(formatter.format(date), style: style),
           Transform.scale(
             scale: _scale,
             child: IconButton(
@@ -334,17 +336,19 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
         ],
       );
     }
-    return Text(formatter.format(date));
+    return Text(formatter.format(date), style: style);
   }
 
   Widget getSeminarWidget(ViewProjectState viewProjectState, Seminar seminar,
       BuildContext context) {
-    double _scale = 0.7;
+    double pad = 4.0;
+    double _scale = .7;
+    TextStyle style = const TextStyle(fontSize: 16);
     if (viewProjectState.showEditButton && viewProjectState.showDeleteButton) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(seminar.name!),
+          Text(seminar.name!, style: style),
           Transform.scale(
             scale: _scale,
             child: IconButton(
@@ -370,7 +374,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(seminar.name!),
+          Text(seminar.name!, style: style),
           Transform.scale(
             scale: _scale,
             child: IconButton(
@@ -387,7 +391,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(seminar.name!),
+          Text(seminar.name!, style: style),
           Transform.scale(
             scale: _scale,
             child: IconButton(
@@ -400,7 +404,10 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
         ],
       );
     }
-    return Text(seminar.name!);
+    return Padding(
+      padding: EdgeInsets.all(pad),
+      child: Text(seminar.name!, style: style),
+    );
   }
 }
 

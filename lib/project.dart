@@ -159,3 +159,96 @@ class _AddProjectWidgetState extends State<AddProjectWidget> {
     );
   }
 }
+
+class EditProjectWidget extends StatefulWidget {
+  const EditProjectWidget({super.key, required this.oldProject});
+  final Project oldProject;
+
+  @override
+  State<EditProjectWidget> createState() => _EditProjectWidgetState();
+}
+
+class _EditProjectWidgetState extends State<EditProjectWidget> {
+  final _editProjectKey = GlobalKey<FormState>();
+  Project project = Project();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Projekt \"${widget.oldProject.title}\" ändern"),
+      ),
+      body: Form(
+        key: _editProjectKey,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              TextFormField(
+                decoration: const InputDecoration(
+                    hintText:
+                        "Der Titel wird auf der Homepage groß dargestellt und muss eindeutig sein",
+                    labelText: "Titel"),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Der Titel darf nicht leer sein";
+                  }
+                  return null;
+                },
+                onSaved: (newValue) {
+                  project.title = newValue;
+                },
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                initialValue: widget.oldProject.title,
+              ),
+              TextFormField(
+                decoration: const InputDecoration(
+                    hintText:
+                        "Der Untertitel wird auf der Homepage unter dem Titel dargestellt",
+                    labelText: "Untertitel"),
+                validator: (value) {
+                  /* if (value != null && value.contains("@")) {
+                    return "Der Titel darf kein @ enthalten";
+                  } */
+                  return null;
+                },
+                onSaved: (newValue) {
+                  project.subtitle = newValue;
+                },
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                initialValue: widget.oldProject.subtitle,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_editProjectKey.currentState!.validate()) {
+                      _editProjectKey.currentState!.save();
+                      var myHomePageState = context.read<MyHomePageState>();
+                      if (myHomePageState.projects.contains(project) &&
+                          widget.oldProject != project) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                            content: Text(
+                                "Projekt kann nicht erstellt werden, der Titel existiert bereits.")));
+                      } else {
+                        myHomePageState.deleteProject(widget.oldProject);
+                        myHomePageState.addProject(project);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Projekt wurde geändert")));
+                        saveProjects(context);
+                        _editProjectKey.currentState!.reset();
+                        Navigator.of(context).pop();
+                      }
+                    }
+                  },
+                  child: const Text("Prüfen und ändern"),
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
