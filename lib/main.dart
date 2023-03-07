@@ -168,6 +168,12 @@ class MyHomePage extends StatelessWidget {
                                                           .deleteProjectByIndex(
                                                               index);
                                                       saveProjects(context);
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                              const SnackBar(
+                                                                  content: Text(
+                                                                      "Das Projekt wurde gelöscht. Die Dateien müssen manuell entfernt werden.")));
                                                       Navigator.of(context)
                                                           .pop();
                                                     },

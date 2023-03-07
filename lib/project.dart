@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:io/io.dart';
 
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'main.dart';
 import 'seminar.dart';
@@ -130,7 +133,7 @@ class _AddProjectWidgetState extends State<AddProjectWidget> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKeyProject.currentState!.validate()) {
                       _formKeyProject.currentState!.save();
                       var myHomePageState = context.read<MyHomePageState>();
@@ -140,6 +143,14 @@ class _AddProjectWidgetState extends State<AddProjectWidget> {
                                 "Projekt kann nicht erstellt werden, der Titel existiert bereits.")));
                       } else {
                         myHomePageState.addProject(project);
+                        Directory appDir =
+                            await getApplicationDocumentsDirectory();
+                        String saveTitle = project.title!
+                            .replaceAll(RegExp('[^A-Za-z0-9]'), '');
+                        String path =
+                            "${appDir.path}/ssvs/$saveTitle/filledTemplates";
+                        Directory(path).createSync(recursive: true);
+
                         ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                                 content: Text("Projekt wurde erstellt")));
@@ -221,7 +232,7 @@ class _EditProjectWidgetState extends State<EditProjectWidget> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_editProjectKey.currentState!.validate()) {
                       _editProjectKey.currentState!.save();
                       var myHomePageState = context.read<MyHomePageState>();
@@ -233,9 +244,27 @@ class _EditProjectWidgetState extends State<EditProjectWidget> {
                       } else {
                         myHomePageState.deleteProject(widget.oldProject);
                         myHomePageState.addProject(project);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text("Projekt wurde geändert")));
+                        Directory appDir =
+                            await getApplicationDocumentsDirectory();
+                        String saveTitle = project.title!
+                            .replaceAll(RegExp('[^A-Za-z0-9]'), '');
+                        String oldSaveTitle = widget.oldProject.title!
+                            .replaceAll(RegExp('[^A-Za-z0-9]'), '');
+                        String path =
+                            "${appDir.path}/ssvs/$saveTitle/filledTemplates";
+                        String oldPath =
+                            "${appDir.path}/ssvs/$oldSaveTitle/filledTemplates";
+                        copyPathSync(oldPath, path);
+                        if (project.title != widget.oldProject.title) {
+                          await ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      "Projekt wurde geändert. Templates müssen erneut erstellt werden, um up-to-date zu sein. Die alten Dateien müssen manuell kopiert/ gelöscht werden.")));
+                        } else {
+                          await ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text("Projekt wurde geändert.")));
+                        }
                         saveProjects(context);
                         _editProjectKey.currentState!.reset();
                         Navigator.of(context).pop();

@@ -14,7 +14,7 @@ import 'seminar.dart';
 void generateExcelTemplate(Project project, BuildContext context) async {
   Directory appDir = await getApplicationDocumentsDirectory();
   String saveTitle = project.title!.replaceAll(RegExp('[^A-Za-z0-9]'), '');
-  String save_path = "${appDir.path}/ssvs/template_$saveTitle.xlsx";
+  String save_path = "${appDir.path}/ssvs/$saveTitle/template_$saveTitle.xlsx";
 
   var excel = Excel.createExcel();
   excel.rename("Sheet1", "Seminare");
@@ -62,11 +62,18 @@ void generateExcelTemplate(Project project, BuildContext context) async {
     ..value = "Ausfüllen"
     ..cellStyle = metaDataInputStyle;
 
-  votingSheet.merge(
-      CellIndex.indexByString("D3"), CellIndex.indexByString("G6"));
-  votingSheet.cell(CellIndex.indexByString("D3"))
-    ..value = "Beschreibungstext"
+  /* votingSheet.merge(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 1),
+      CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: 6));
+  votingSheet.cell(CellIndex.indexByString("D2"))
+    ..value = "Alle Felder, die mit \"Ausfüllen\" beschriftet sind, müssen ausgefüllt werden, um als gültige Eingabe erkannt zu werden. \n" +
+        "Für den Dienstgrad ist die Listenschreibweise zu verwenden. Die Seminarbewertung erfolgt über ein Punktesystem. Jedes Seminar kann mit einem Wert zwischen 0 und 5 bewertet werden. " +
+        "Die Bewertung beschreibt, wie sehr sie dieses Seminar besuchen möchten. Je höher der Wert, desto eher möchten Sie das Seminar besuchen.\n" +
+        "Sollte ein Seminartag nicht belegt werden (z.B. wegen Urlaub etc.), dann sind die Seminare an diesem Tag mit einer -1 als Bewertung einzutragen."
     ..cellStyle = informationStyle;
+
+  votingSheet.cell(CellIndex.indexByString("D1"))
+    ..value = "Ausfüllhinweise"
+    ..cellStyle = metaDataStyle; */
 
   int colIndex = 1;
   List<DateTime> dates = project.seminarPerDate.keys.toList();
@@ -262,7 +269,9 @@ void createAssignments(Project project, BuildContext context) async {
       const SnackBar(content: Text("Excel-Auswertung wird erstellt...")));
   // run through directory recursivly TODO: add
   Directory appDir = await getApplicationDocumentsDirectory();
-  Directory dir = Directory("${appDir.path}/ssvs/testData");
+  String saveTitle = project.title!.replaceAll(RegExp('[^A-Za-z0-9]'), '');
+  // debugPrint(saveTitle);
+  Directory dir = Directory("${appDir.path}/ssvs/$saveTitle/filledTemplates");
   List<FileSystemEntity> entities =
       await dir.list(recursive: true, followLinks: false).toList();
   List<FilledSheet> filledSheets = [];
@@ -587,8 +596,8 @@ void createAssignments(Project project, BuildContext context) async {
 
   excel.setDefaultSheet("Übersicht");
 
-  String saveTitle = project.title!.replaceAll(RegExp('[^A-Za-z0-9]'), '');
-  String save_path = "${appDir.path}/ssvs/${saveTitle}_Auswertung.xlsx";
+  String save_path =
+      "${appDir.path}/ssvs/$saveTitle/${saveTitle}_Auswertung.xlsx";
 
   var fileBytes = excel.save();
   File(save_path).createSync(recursive: true);

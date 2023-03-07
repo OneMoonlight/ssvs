@@ -189,7 +189,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                   icon: const Icon(Icons.save),
                   tooltip: "Projekt speichern",
                 ),
-                IconButton(
+                /* IconButton(
                   onPressed: () {
                     debugPrint(jsonEncode(
                       viewProjectState.project,
@@ -197,7 +197,7 @@ class _ViewProjectWidgetState extends State<ViewProjectWidget> {
                   },
                   icon: const Icon(Icons.alarm_on_sharp),
                   tooltip: "Debug Test",
-                ),
+                ), */
               ],
             ),
           ),
