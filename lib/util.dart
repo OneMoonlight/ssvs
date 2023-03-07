@@ -19,9 +19,11 @@ void generateExcelTemplate(Project project, BuildContext context) async {
   var excel = Excel.createExcel();
   excel.rename("Sheet1", "Seminare");
   excel.copy("Seminare", "Voting");
+  excel.copy("Semianre", "Ausfüllhinweise");
 
   Sheet votingSheet = excel["Voting"];
   Sheet seminarSheet = excel["Seminare"];
+  Sheet hintSheet = excel["Ausfüllhinweise"];
 
   CellStyle titleStyle = CellStyle(bold: true, fontSize: 16);
   CellStyle metaDataStyle = CellStyle(bold: true, fontSize: 12);
@@ -32,6 +34,10 @@ void generateExcelTemplate(Project project, BuildContext context) async {
       textWrapping: TextWrapping.WrapText,
       verticalAlign: VerticalAlign.Top,
       horizontalAlign: HorizontalAlign.Left);
+  CellStyle seminarListStyle = CellStyle(
+      textWrapping: TextWrapping.WrapText,
+      verticalAlign: VerticalAlign.Center,
+      horizontalAlign: HorizontalAlign.Center);
 
   votingSheet.cell(CellIndex.indexByString("A1"))
     ..value = "Voting"
@@ -62,18 +68,48 @@ void generateExcelTemplate(Project project, BuildContext context) async {
     ..value = "Ausfüllen"
     ..cellStyle = metaDataInputStyle;
 
-  /* votingSheet.merge(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 1),
-      CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: 6));
-  votingSheet.cell(CellIndex.indexByString("D2"))
-    ..value = "Alle Felder, die mit \"Ausfüllen\" beschriftet sind, müssen ausgefüllt werden, um als gültige Eingabe erkannt zu werden. \n" +
-        "Für den Dienstgrad ist die Listenschreibweise zu verwenden. Die Seminarbewertung erfolgt über ein Punktesystem. Jedes Seminar kann mit einem Wert zwischen 0 und 5 bewertet werden. " +
-        "Die Bewertung beschreibt, wie sehr sie dieses Seminar besuchen möchten. Je höher der Wert, desto eher möchten Sie das Seminar besuchen.\n" +
-        "Sollte ein Seminartag nicht belegt werden (z.B. wegen Urlaub etc.), dann sind die Seminare an diesem Tag mit einer -1 als Bewertung einzutragen."
+  hintSheet.cell(CellIndex.indexByString("A1"))
+    ..value = "Ausfüllhinweise"
+    ..cellStyle = titleStyle;
+  hintSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 2),
+      CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: 3));
+  hintSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 2))
+    ..value =
+        "1. Alle Felder, die mit \"Ausfüllen\" beschriftet sind, müssen ausgefüllt werden, um als gültige Eingabe erkannt zu werden."
+    ..cellStyle = informationStyle;
+  hintSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 4),
+      CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: 4));
+  hintSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 4))
+    ..value = "2. Für den Dienstgrad ist die Listenschreibweise zu verwenden."
+    ..cellStyle = informationStyle;
+  hintSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 5),
+      CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: 8));
+  hintSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 5))
+    ..value =
+        "3. Die Seminarbewertung erfolgt über ein Punktesystem. Jedes Seminar kann mit einem Wert zwischen 0 und 5 bewertet werden. "
+            "Die Bewertung beschreibt, wie sehr sie dieses Seminar besuchen möchten. Je höher der Wert, desto eher möchten Sie das Seminar besuchen."
+    ..cellStyle = informationStyle;
+  hintSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 9),
+      CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: 10));
+  hintSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 9))
+    ..value =
+        "4. Sollte ein Seminartag nicht belegt werden (z.B. wegen Urlaub etc.), dann sind die Seminare an diesem Tag mit einer -1 als Bewertung einzutragen."
+    ..cellStyle = informationStyle;
+  hintSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 11),
+      CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: 11));
+  hintSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 11))
+    ..value = "5. Alle anderen Werte führen zu einer ungültigen Bewertung."
+    ..cellStyle = informationStyle;
+  hintSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 12),
+      CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: 14));
+  hintSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 12))
+    ..value =
+        "6. Bennen Sie die Datei folgendermaßen:\nHörsaal_Dienstgrad_Name_Nachname.xlsx\nBeispiel: \"B_L_Mustermann_Max\""
     ..cellStyle = informationStyle;
 
-  votingSheet.cell(CellIndex.indexByString("D1"))
-    ..value = "Ausfüllhinweise"
-    ..cellStyle = metaDataStyle; */
+  votingSheet.cell(CellIndex.indexByString("D3"))
+    ..value = "Beachten Sie die Ausfüllhinweise!"
+    ..cellStyle = metaDataStyle;
 
   int colIndex = 1;
   List<DateTime> dates = project.seminarPerDate.keys.toList();
@@ -99,6 +135,50 @@ void generateExcelTemplate(Project project, BuildContext context) async {
       rowIndex += 1;
     }
     colIndex += 3;
+  }
+
+  seminarSheet.cell(CellIndex.indexByString("A1"))
+    ..value = "Seminarübersicht"
+    ..cellStyle = titleStyle;
+  seminarSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 2))
+    ..value = "Datum"
+    ..cellStyle = metaDataStyle;
+  seminarSheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 2))
+    ..value = "Titel"
+    ..cellStyle = metaDataStyle;
+  seminarSheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 2))
+    ..value = "Verantwortliche Person"
+    ..cellStyle = metaDataStyle;
+  seminarSheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: 2))
+    ..value = "Max. Teilnehmerzahl"
+    ..cellStyle = metaDataStyle;
+  seminarSheet.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: 2))
+    ..value = "Hinweise/ Beschreibung"
+    ..cellStyle = metaDataStyle;
+
+  int rowIndex = 3;
+
+  for (DateTime date in project.seminarPerDate.keys.toList()..sort()) {
+    for (Seminar seminar in project.seminarPerDate[date]!.toList()
+      ..sort((a, b) => a.name!.compareTo(b.name!))) {
+      seminarSheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex))
+        ..value = DateFormat("dd.MM.yyyy").format(date)
+        ..cellStyle = seminarListStyle;
+      seminarSheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex))
+        ..value = seminar.name
+        ..cellStyle = seminarListStyle;
+      seminarSheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex))
+        ..value = seminar.contact
+        ..cellStyle = seminarListStyle;
+      seminarSheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex))
+        ..value = seminar.maxPeople
+        ..cellStyle = seminarListStyle;
+      rowIndex++;
+    }
   }
 
   debugPrint('Änderung vorgenommen');
