@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:io';
 import 'dart:math';
 
@@ -106,6 +107,12 @@ void generateExcelTemplate(Project project, BuildContext context) async {
     ..value =
         "6. Bennen Sie die Datei folgendermaßen:\nHörsaal_Dienstgrad_Name_Nachname.xlsx\nBeispiel: \"B_L_Mustermann_Max\""
     ..cellStyle = informationStyle;
+  hintSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 15),
+      CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: 16));
+  hintSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 15))
+    ..value = "7. Die gültigen Dienstgradeintragungen umfassen:\n" +
+        "${FilledSheet(group: "", firstName: "", lastName: "", rank: "").ranks}"
+    ..cellStyle = informationStyle;
 
   votingSheet.cell(CellIndex.indexByString("D3"))
     ..value = "Beachten Sie die Ausfüllhinweise!"
@@ -177,6 +184,10 @@ void generateExcelTemplate(Project project, BuildContext context) async {
           .cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex))
         ..value = seminar.maxPeople
         ..cellStyle = seminarListStyle;
+      seminarSheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex))
+        ..value = seminar.description
+        ..cellStyle = seminarListStyle;
       rowIndex++;
     }
   }
@@ -195,6 +206,23 @@ class FilledSheet {
   String firstName;
   String rank;
 
+  List<String> ranks = [
+    "FJ",
+    "SU(OA)",
+    "FR",
+    "OF(OA)",
+    "OFR",
+    "SF(OA)",
+    "OSF(OA)",
+    "L",
+    "OL",
+    "H",
+    "SH",
+    "M",
+    "OTL",
+    "O"
+  ].reversed.toList();
+
   Map<Seminar, int> votings = {};
   AdditionalInformation additionalInformation = AdditionalInformation();
 
@@ -206,6 +234,47 @@ class FilledSheet {
 
   void addVoting(Seminar seminar, int score) {
     votings[seminar] = score;
+  }
+
+  int compareTo(FilledSheet other) {
+    //debugPrint(
+    //    "comparing: ${rank}, ${lastName}, ${firstName} with ${other.rank}, ${other.lastName}, ${other.firstName}");
+    if (other.group != group) {
+      //debugPrint("different group");
+      return group.compareTo(other.group);
+    }
+    if (rank != other.rank) {
+      //debugPrint("different rank");
+      if (!ranks.contains(rank)) {
+        //debugPrint(
+        //    "ranks does not contain rank of ${lastName}, ${firstName}: $rank");
+        return -1;
+      }
+      if (!ranks.contains(other.rank)) {
+        //debugPrint(
+        //    "ranks does not contain rank of ${other.lastName}, ${other.firstName}: ${other.rank}");
+        return 1;
+      }
+      if (ranks.indexOf(rank) > ranks.indexOf(other.rank)) {
+        //debugPrint(
+        //    "$rank > ${other.rank}: ${ranks.indexOf(rank)} > ${ranks.indexOf(other.rank)}");
+        return 1;
+      } else {
+        //debugPrint(
+        //    "$rank < ${other.rank}: ${ranks.indexOf(rank)} < ${ranks.indexOf(other.rank)}");
+        return -1;
+      }
+    }
+    if (lastName != other.lastName) {
+      //debugPrint("different lastName");
+      return lastName.compareTo(other.lastName);
+    }
+    if (firstName != other.firstName) {
+      //debugPrint("different firstName");
+      return firstName.compareTo(other.firstName);
+    }
+    //debugPrint("same...");
+    return 0;
   }
 
   @override
@@ -249,7 +318,10 @@ FilledSheet readExcelTemplate(Project project, Excel excel) {
   }
 
   FilledSheet filledSheet = FilledSheet(
-      group: group, firstName: firstName, lastName: lastName, rank: rank);
+      group: group,
+      firstName: firstName,
+      lastName: lastName,
+      rank: rank.replaceAll(" ", ""));
 
   int colIndex = 1;
   List<DateTime> dates = project.seminarPerDate.keys.toList();
@@ -536,7 +608,9 @@ void createAssignments(Project project, BuildContext context) async {
         ..value = "Vorname"
         ..cellStyle = listStyle;
       int row = 4;
-      for (FilledSheet filledSheet in seminar.assignments) {
+      List<FilledSheet> sheets = seminar.assignments
+        ..sort((a, b) => a.compareTo(b));
+      for (FilledSheet filledSheet in sheets) {
         sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
           ..value = filledSheet.group
           ..cellStyle = listStyle;
