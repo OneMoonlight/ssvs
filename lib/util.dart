@@ -113,6 +113,11 @@ void generateExcelTemplate(Project project, BuildContext context) async {
     ..value = "7. Die gültigen Dienstgradeintragungen umfassen:\n" +
         "${FilledSheet(group: "", firstName: "", lastName: "", rank: "").ranks}"
     ..cellStyle = informationStyle;
+  hintSheet.merge(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 17),
+      CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: 17));
+  hintSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 17))
+    ..value = "8. Als Hörsaalbezeichnung ist nur der Buchstabe zu verwenden."
+    ..cellStyle = informationStyle;
 
   votingSheet.cell(CellIndex.indexByString("D3"))
     ..value = "Beachten Sie die Ausfüllhinweise!"
@@ -415,11 +420,9 @@ class AdditionalInformation {
   }
 }
 
-//void createAssignments(Directory dir, Project project) async { change to this later TODO
 void createAssignments(Project project, BuildContext context) async {
   ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Excel-Auswertung wird erstellt...")));
-  // run through directory recursivly TODO: add
   Directory appDir = await getApplicationDocumentsDirectory();
   String saveTitle = project.title!.replaceAll(RegExp('[^A-Za-z0-9]'), '');
   // debugPrint(saveTitle);
@@ -505,6 +508,8 @@ void createAssignments(Project project, BuildContext context) async {
             for (Seminar otherSeminar
                 in seminars.where((element) => element != seminar)) {
               otherSeminar.votings.remove(filledSheet);
+              debugPrint(
+                  "removing ${filledSheet.lastName} from ${otherSeminar.name}");
             }
             seminar.addAssignment(filledSheet);
             filledSheet.additionalInformation.addAssignment(date, seminar);
@@ -559,6 +564,8 @@ void createAssignments(Project project, BuildContext context) async {
           for (FilledSheet filledSheet in assigned) {
             for (Seminar otherSeminar
                 in seminars.where((element) => element != seminar)) {
+              debugPrint(
+                  "removing ${filledSheet.lastName} from ${otherSeminar.name}");
               otherSeminar.votings.remove(filledSheet);
             }
             filledSheet.additionalInformation.currentDifference = max(
@@ -581,6 +588,8 @@ void createAssignments(Project project, BuildContext context) async {
 
   CellStyle titleStyle = CellStyle(bold: true, fontSize: 16);
   CellStyle listStyle = CellStyle(fontSize: 12);
+  CellStyle listTitleStyle = CellStyle(bold: true, fontSize: 12);
+  CellStyle listTitleStyleBigger = CellStyle(bold: true, fontSize: 14);
 
   for (DateTime date in project.seminarPerDate.keys.toList()..sort()) {
     for (Seminar seminar in project.seminarPerDate[date]!.toList()
@@ -594,19 +603,19 @@ void createAssignments(Project project, BuildContext context) async {
         ..cellStyle = titleStyle;
       sheet.cell(CellIndex.indexByString("A3"))
         ..value = "Teilnehmer"
-        ..cellStyle = listStyle;
+        ..cellStyle = listTitleStyleBigger;
       sheet.cell(CellIndex.indexByString("A4"))
         ..value = "Hörsaal"
-        ..cellStyle = listStyle;
+        ..cellStyle = listTitleStyle;
       sheet.cell(CellIndex.indexByString("B4"))
         ..value = "Dienstgrad"
-        ..cellStyle = listStyle;
+        ..cellStyle = listTitleStyle;
       sheet.cell(CellIndex.indexByString("C4"))
         ..value = "Name"
-        ..cellStyle = listStyle;
+        ..cellStyle = listTitleStyle;
       sheet.cell(CellIndex.indexByString("D4"))
         ..value = "Vorname"
-        ..cellStyle = listStyle;
+        ..cellStyle = listTitleStyle;
       int row = 4;
       List<FilledSheet> sheets = seminar.assignments
         ..sort((a, b) => a.compareTo(b));
@@ -639,19 +648,19 @@ void createAssignments(Project project, BuildContext context) async {
     ..cellStyle = listStyle;
   sheetNoAttendance.cell(CellIndex.indexByString("A4"))
     ..value = "Hörsaal"
-    ..cellStyle = listStyle;
+    ..cellStyle = listTitleStyle;
   sheetNoAttendance.cell(CellIndex.indexByString("B4"))
     ..value = "Dienstgrad"
-    ..cellStyle = listStyle;
+    ..cellStyle = listTitleStyle;
   sheetNoAttendance.cell(CellIndex.indexByString("C4"))
     ..value = "Name"
-    ..cellStyle = listStyle;
+    ..cellStyle = listTitleStyle;
   sheetNoAttendance.cell(CellIndex.indexByString("D4"))
     ..value = "Vorname"
-    ..cellStyle = listStyle;
+    ..cellStyle = listTitleStyle;
   sheetNoAttendance.cell(CellIndex.indexByString("E4"))
     ..value = "Daten"
-    ..cellStyle = listStyle;
+    ..cellStyle = listTitleStyle;
   int row = 4;
   noAttendance.forEach((filledSheet, dates) {
     sheetNoAttendance
@@ -673,8 +682,9 @@ void createAssignments(Project project, BuildContext context) async {
     String stringDates = "";
     for (DateTime date in dates) {
       stringDates += DateFormat("dd.MM.yyyy").format(date);
-      stringDates += ";";
+      stringDates += "; ";
     }
+    stringDates = stringDates.trim();
     if (stringDates.isNotEmpty) {
       stringDates = stringDates.substring(0, stringDates.length - 1);
     }
@@ -694,13 +704,13 @@ void createAssignments(Project project, BuildContext context) async {
     ..cellStyle = listStyle;
   sheetInvalids.cell(CellIndex.indexByString("A4"))
     ..value = "Dateiname"
-    ..cellStyle = listStyle;
+    ..cellStyle = listTitleStyle;
   sheetInvalids.cell(CellIndex.indexByString("B4"))
     ..value = "Fehlertyp"
-    ..cellStyle = listStyle;
+    ..cellStyle = listTitleStyle;
   sheetInvalids.cell(CellIndex.indexByString("C4"))
     ..value = "Weitere Informationen"
-    ..cellStyle = listStyle;
+    ..cellStyle = listTitleStyle;
   row = 4;
   for (FailedLoadings failedLoadings in fails) {
     sheetInvalids
@@ -720,6 +730,77 @@ void createAssignments(Project project, BuildContext context) async {
     row++;
   }
 
+  Map<String, List<FilledSheet>> groups = {};
+
+  for (FilledSheet filledSheet in filledSheets) {
+    if (!groups.containsKey(filledSheet.group)) {
+      groups[filledSheet.group] = [];
+    }
+    groups[filledSheet.group]!.add(filledSheet);
+  }
+
+  for (String group in groups.keys) {
+    excel.copy("Sheet1", "Hörsaal $group");
+    Sheet currentSheet = excel["Hörsaal $group"];
+    currentSheet.cell(CellIndex.indexByString("A1"))
+      ..value = "Hörsaalliste $group"
+      ..cellStyle = titleStyle;
+    int colIndex = 3;
+    Map<DateTime, int> dateIndexMap = {};
+    currentSheet
+        .cell(CellIndex.indexByColumnRow(columnIndex: colIndex, rowIndex: 2))
+      ..value = "Seminare"
+      ..cellStyle = listTitleStyleBigger;
+    for (DateTime date in project.seminarPerDate.keys.toList()..sort()) {
+      dateIndexMap[date] = colIndex;
+      currentSheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: colIndex, rowIndex: 3))
+        ..value = DateFormat("dd.MM.yyyy").format(date)
+        ..cellStyle = listTitleStyle;
+      colIndex++;
+    }
+    currentSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 2))
+      ..value = "Teilnehmer"
+      ..cellStyle = listTitleStyleBigger;
+    currentSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 3))
+      ..value = "Dienstgrad"
+      ..cellStyle = listTitleStyle;
+    currentSheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: 3))
+      ..value = "Nachname"
+      ..cellStyle = listTitleStyle;
+    currentSheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: 3))
+      ..value = "Vorname"
+      ..cellStyle = listTitleStyle;
+
+    int rowIndex = 4;
+    List<FilledSheet> sortedGroup = groups[group]!.toList()
+      ..sort(
+        (a, b) => a.compareTo(b),
+      );
+    for (FilledSheet filledSheet in sortedGroup) {
+      currentSheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex))
+        ..value = filledSheet.rank
+        ..cellStyle = listStyle;
+      currentSheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex))
+        ..value = filledSheet.lastName
+        ..cellStyle = listStyle;
+      currentSheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex))
+        ..value = filledSheet.firstName
+        ..cellStyle = listStyle;
+      for (DateTime date
+          in filledSheet.additionalInformation.assignments.keys) {
+        currentSheet.cell(CellIndex.indexByColumnRow(
+            columnIndex: dateIndexMap[date], rowIndex: rowIndex))
+          ..value = filledSheet.additionalInformation.assignments[date]!.name
+          ..cellStyle = listStyle;
+      }
+      rowIndex++;
+    }
+  }
+
   excel.rename("Sheet1", "Übersicht");
   Sheet mainSheet = excel["Übersicht"];
   mainSheet.cell(CellIndex.indexByString("A1"))
@@ -729,24 +810,58 @@ void createAssignments(Project project, BuildContext context) async {
     ..value = project.subtitle
     ..cellStyle = listStyle;
   mainSheet.cell(CellIndex.indexByString("A4"))
-    ..value = "Anzahl gültiger Teilnehmer"
-    ..cellStyle = listStyle;
+    ..value = "Gesamt"
+    ..cellStyle = listTitleStyleBigger;
   mainSheet.cell(CellIndex.indexByString("A5"))
-    ..value = "Anzahl ungültiger Templates"
-    ..cellStyle = listStyle;
+    ..value = "Anzahl gültiger Teilnehmer"
+    ..cellStyle = listTitleStyle;
   mainSheet.cell(CellIndex.indexByString("A6"))
+    ..value = "Anzahl ungültiger Templates"
+    ..cellStyle = listTitleStyle;
+  mainSheet.cell(CellIndex.indexByString("A7"))
     ..value = "Anzahl Nicht-Teilnahmen"
-    ..cellStyle = listStyle;
+    ..cellStyle = listTitleStyle;
 
-  mainSheet.cell(CellIndex.indexByString("B4"))
+  mainSheet.cell(CellIndex.indexByString("B5"))
     ..value = filledSheets.length
     ..cellStyle = listStyle;
-  mainSheet.cell(CellIndex.indexByString("B5"))
+  mainSheet.cell(CellIndex.indexByString("B6"))
     ..value = fails.length
     ..cellStyle = listStyle;
-  mainSheet.cell(CellIndex.indexByString("B6"))
+  mainSheet.cell(CellIndex.indexByString("B7"))
     ..value = noAttendance.length
     ..cellStyle = listStyle;
+
+  mainSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 8))
+    ..value = "Je Hörsaal"
+    ..cellStyle = listTitleStyleBigger;
+
+  int rowIndex = 9;
+  int colIndex = 0;
+  for (String group in groups.keys.toList()..sort()) {
+    mainSheet.cell(
+        CellIndex.indexByColumnRow(columnIndex: colIndex, rowIndex: rowIndex))
+      ..value = "Hörsaal $group"
+      ..cellStyle = listTitleStyle;
+    mainSheet.cell(CellIndex.indexByColumnRow(
+        columnIndex: colIndex, rowIndex: rowIndex + 1))
+      ..value = "Anzahl gültiger Teilnehmer"
+      ..cellStyle = listTitleStyle;
+    mainSheet.cell(CellIndex.indexByColumnRow(
+        columnIndex: colIndex, rowIndex: rowIndex + 2))
+      ..value = "Anzahl Nicht-Teilnahmen"
+      ..cellStyle = listTitleStyle;
+    mainSheet.cell(CellIndex.indexByColumnRow(
+        columnIndex: colIndex + 1, rowIndex: rowIndex + 1))
+      ..value = groups[group]!.length
+      ..cellStyle = listStyle;
+    mainSheet.cell(CellIndex.indexByColumnRow(
+        columnIndex: colIndex + 1, rowIndex: rowIndex + 2))
+      ..value =
+          noAttendance.keys.where((element) => element.group == group).length
+      ..cellStyle = listStyle;
+    colIndex += 3;
+  }
 
   excel.setDefaultSheet("Übersicht");
 
