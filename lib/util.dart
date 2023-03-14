@@ -451,22 +451,43 @@ void createAssignments(Project project, BuildContext context) async {
   // retrieve base data for assigning
   Map<FilledSheet, List<DateTime>> noAttendance = {};
   List<TuplePersonDate> toAssign = [];
+  List<TuplePersonDate> putAnywhere = [];
 
   for (FilledSheet sheet in filledSheets) {
+    debugPrint("evaluating sheet for ${sheet.lastName}");
     Map<DateTime, Map<Seminar, int>> votingsPerDay = {};
     Map<DateTime, bool> attendancePerDay = {};
     for (Seminar seminar in sheet.votings.keys) {
       if (!attendancePerDay.containsKey(seminar.date)) {
         attendancePerDay[seminar.date!] = true;
       }
-      votingsPerDay[seminar.date!] = {seminar: sheet.votings[seminar]!};
+      if (!votingsPerDay.containsKey(seminar.date)) {
+        votingsPerDay[seminar.date!] = {};
+      }
+      votingsPerDay[seminar.date!]![seminar] = sheet.votings[seminar]!;
       if (sheet.votings[seminar] == -1) {
         attendancePerDay[seminar.date!] = false;
       }
     }
     for (DateTime date in attendancePerDay.keys) {
       if (attendancePerDay[date]!) {
-        toAssign.add(TuplePersonDate(filledSheet: sheet, date: date));
+        bool eq = true;
+        int current =
+            votingsPerDay[date]![votingsPerDay[date]!.keys.toList()[0]]!;
+        debugPrint("current: $current");
+        for (Seminar seminar in votingsPerDay[date]!.keys) {
+          if (eq) {
+            eq = current == votingsPerDay[date]![seminar];
+            debugPrint(
+                "new eq for ${sheet.lastName}: $eq; because current=$current and voting=${votingsPerDay[date]![seminar]}");
+          }
+        }
+        debugPrint("final eq for ${sheet.lastName}: $eq");
+        if (eq) {
+          putAnywhere.add(TuplePersonDate(filledSheet: sheet, date: date));
+        } else {
+          toAssign.add(TuplePersonDate(filledSheet: sheet, date: date));
+        }
       } else {
         if (!noAttendance.containsKey(sheet)) {
           noAttendance[sheet] = [];
@@ -508,8 +529,8 @@ void createAssignments(Project project, BuildContext context) async {
             for (Seminar otherSeminar
                 in seminars.where((element) => element != seminar)) {
               otherSeminar.votings.remove(filledSheet);
-              debugPrint(
-                  "removing ${filledSheet.lastName} from ${otherSeminar.name}");
+              /* debugPrint(
+                  "removing ${filledSheet.lastName} from ${otherSeminar.name}"); */
             }
             seminar.addAssignment(filledSheet);
             filledSheet.additionalInformation.addAssignment(date, seminar);
@@ -564,8 +585,8 @@ void createAssignments(Project project, BuildContext context) async {
           for (FilledSheet filledSheet in assigned) {
             for (Seminar otherSeminar
                 in seminars.where((element) => element != seminar)) {
-              debugPrint(
-                  "removing ${filledSheet.lastName} from ${otherSeminar.name}");
+              /* debugPrint(
+                  "removing ${filledSheet.lastName} from ${otherSeminar.name}"); */
               otherSeminar.votings.remove(filledSheet);
             }
             filledSheet.additionalInformation.currentDifference = max(
@@ -577,6 +598,31 @@ void createAssignments(Project project, BuildContext context) async {
           }
           seminar.votings.clear();
         }
+      }
+    }
+    debugPrint("PutAnywhere List: $putAnywhere");
+    for (Seminar seminar in seminars) {
+      List<TuplePersonDate> assigned = [];
+      for (TuplePersonDate tuple
+          in putAnywhere.where((element) => element.date == date)) {
+        List<String> currentAssignmentNames = [];
+        for (Seminar seminar
+            in tuple.filledSheet.additionalInformation.assignments.values) {
+          currentAssignmentNames.add(seminar.name!);
+        }
+        if (seminar.maxPeople! > seminar.assignments.length &&
+            !currentAssignmentNames.contains(seminar.name)) {
+          seminar.addAssignment(tuple.filledSheet);
+          tuple.filledSheet.additionalInformation.addAssignment(date, seminar);
+          assigned.add(tuple);
+          debugPrint(
+              "added ${tuple.filledSheet.lastName} to ${seminar.name} because equality");
+        }
+      }
+      for (TuplePersonDate tuple in assigned) {
+        putAnywhere.remove(tuple);
+        debugPrint(
+            "removed ${tuple.filledSheet.lastName} from list because equality");
       }
     }
   }
